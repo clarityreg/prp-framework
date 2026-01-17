@@ -21,6 +21,7 @@ All commands use the `/prp-*` namespace:
 | `/prp-pr [base]` | Create pull request | None |
 | `/prp-validate [scope]` | Run comprehensive validation | None |
 | `/prp-primer` | Load project context | Reports Archon status |
+| `/prp-coderabbit [scope]` | Run CodeRabbit AI code review | None |
 
 ## Archon MCP Integration
 
@@ -99,8 +100,12 @@ When Archon is available, the Ralph loop:
 │   ├── prp-commit.md
 │   ├── prp-pr.md
 │   ├── prp-validate.md
-│   └── prp-primer.md
+│   ├── prp-primer.md
+│   └── prp-coderabbit.md    # CodeRabbit AI review
 ├── agents/                  # Specialized agent prompts
+│   └── code-simplifier.md   # Post-implementation simplification
+├── hooks/                   # Automation hooks
+│   └── auto-format.sh       # Auto-format on Write/Edit
 ├── PRPs/                    # Artifact storage
 │   ├── prds/               # PRD documents
 │   ├── plans/              # Implementation plans
@@ -146,7 +151,10 @@ All commands gracefully handle missing Archon:
 # 4. Validate
 /prp-validate
 
-# 5. Create PR
+# 5. AI Code Review (before PR)
+/prp-coderabbit branch:main
+
+# 6. Create PR
 /prp-pr
 ```
 
