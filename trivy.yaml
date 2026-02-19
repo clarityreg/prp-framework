@@ -1,0 +1,40 @@
+# ============================================================
+# Trivy Security Scanner Configuration
+# https://aquasecurity.github.io/trivy/
+# ============================================================
+#
+# Usage:
+#   trivy fs .                              # Full scan (vulns + secrets + misconfig)
+#   trivy fs --scanners secret .            # Secret detection only
+#   trivy fs --scanners vuln .              # Dependency vulnerabilities only
+#   trivy fs --severity HIGH,CRITICAL .     # Only high/critical issues
+
+scan:
+  # Scanners to enable
+  scanners:
+    - vuln       # Dependency vulnerabilities (requirements.txt, package.json, Cargo.toml)
+    - secret     # Leaked secrets (API keys, tokens, passwords)
+    - misconfig  # Misconfiguration in config files
+
+severity:
+  - LOW
+  - MEDIUM
+  - HIGH
+  - CRITICAL
+
+# Skip directories that contain build artifacts or dependencies
+skip-dirs:
+  - node_modules
+  - .svelte-kit
+  - build
+  - dist
+  - target
+  - .venv
+  - venv
+  - __pycache__
+  - .git
+
+# Skip files
+skip-files:
+  - "*.db"
+  - "*.sqlite"
