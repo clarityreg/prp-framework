@@ -23,21 +23,28 @@ fn main() {
                 .expect("Failed to get current directory")
                 .join("backend");
 
-            if !backend_dir.exists() {
+            let backend_dir = if !backend_dir.exists() {
                 // Fallback: try relative to the executable
                 let exe_dir = std::env::current_exe()
                     .ok()
                     .and_then(|p| p.parent().map(|d| d.to_path_buf()));
-                if let Some(dir) = exe_dir {
-                    let alt = dir.join("backend");
+                let alt_dir = exe_dir.map(|dir| dir.join("backend"));
+                if let Some(ref alt) = alt_dir {
                     if alt.exists() {
                         println!("[Backend] Found backend at: {:?}", alt);
                     }
                 }
-                println!("[Backend] Warning: backend dir not found at {:?}", backend_dir);
-                println!("[Backend] Start the backend manually: cd backend && uv run uvicorn main:app --port 8766");
-                return Ok(());
-            }
+                match alt_dir {
+                    Some(alt) if alt.exists() => alt,
+                    _ => {
+                        println!("[Backend] Warning: backend dir not found at {:?}", backend_dir);
+                        println!("[Backend] Start the backend manually: cd backend && uv run uvicorn main:app --port 8766");
+                        return Ok(());
+                    }
+                }
+            } else {
+                backend_dir
+            };
 
             println!("[Backend] Spawning from: {:?}", backend_dir);
 

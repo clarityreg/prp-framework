@@ -38,7 +38,7 @@ class PlaneService(BaseService):
     async def connect(self) -> bool:
         """Verify Plane API connection."""
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.get(
                     f"{self._base_url}/workspaces/{self._workspace}/",
                     headers=self._headers,
@@ -57,7 +57,7 @@ class PlaneService(BaseService):
         """Fetch recent issues assigned to you."""
         notifications = []
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 # Get issues assigned to me from the default project
                 resp = await client.get(
                     f"{self._base_url}/workspaces/{self._workspace}/projects/{settings.plane_default_project_id}/issues/",
@@ -85,7 +85,7 @@ class PlaneService(BaseService):
         """Poll for issue updates."""
         while self._running:
             try:
-                async with httpx.AsyncClient() as client:
+                async with httpx.AsyncClient(timeout=30.0) as client:
                     params = {
                         "assignees": "me",
                         "order_by": "-updated_at",
@@ -126,7 +126,7 @@ class PlaneService(BaseService):
         """Create a new issue in Plane."""
         try:
             proj = project_id or settings.plane_default_project_id
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
                     f"{self._base_url}/workspaces/{self._workspace}/projects/{proj}/issues/",
                     headers=self._headers,

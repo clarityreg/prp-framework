@@ -189,6 +189,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
+    except Exception as e:
+        print(f"[WS] Error: {e}")
+        ws_manager.disconnect(websocket)
 
 
 # ============================================================
@@ -226,12 +229,16 @@ async def action_notification(notification_id: str, action: NotificationAction):
         source = payload.get("source")
         account = payload.get("source_account")
 
-        if not source or not body:
+        if not source or not body or not account:
             raise HTTPException(
                 400, "Reply requires 'source', 'source_account', and 'body' in payload"
             )
 
-        service = registry.get_service_for_reply(Source(source), account)
+        try:
+            source_enum = Source(source)
+        except ValueError as err:
+            raise HTTPException(400, f"Invalid source: {source}") from err
+        service = registry.get_service_for_reply(source_enum, account)
         if not service:
             raise HTTPException(404, f"No service found for {source}:{account}")
 
@@ -242,12 +249,16 @@ async def action_notification(notification_id: str, action: NotificationAction):
         return {"status": "replied"}
 
     elif action.action == "archive":
-        await update_triage_status(notification_id, "archived")
+        updated = await update_triage_status(notification_id, "archived")
+        if not updated:
+            raise HTTPException(404, f"Notification {notification_id} not found")
         await ws_manager.send_update(notification_id, {"triage_status": "archived"})
         return {"status": "archived"}
 
     elif action.action == "mark_read":
-        await update_triage_status(notification_id, "read")
+        updated = await update_triage_status(notification_id, "read")
+        if not updated:
+            raise HTTPException(404, f"Notification {notification_id} not found")
         await ws_manager.send_update(notification_id, {"triage_status": "read"})
         return {"status": "read"}
 
@@ -256,7 +267,11 @@ async def action_notification(notification_id: str, action: NotificationAction):
 
         minutes = (action.payload or {}).get("snooze_minutes", 30)
         snoozed_until = datetime.now(UTC) + timedelta(minutes=minutes)
-        await update_triage_status(notification_id, "snoozed", snoozed_until=snoozed_until)
+        updated = await update_triage_status(
+            notification_id, "snoozed", snoozed_until=snoozed_until
+        )
+        if not updated:
+            raise HTTPException(404, f"Notification {notification_id} not found")
         await ws_manager.send_update(
             notification_id,
             {
@@ -353,7 +368,7 @@ async def google_oauth_callback(code: str, state: str = ""):
         raise HTTPException(400, "Missing state parameter (email)")
 
     try:
-        tokens = exchange_code(code)
+        tokens = await exchange_code(code)
         await save_tokens(email, tokens)
         print(f"[OAuth] Tokens saved for {email}")
 

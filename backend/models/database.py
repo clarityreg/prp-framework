@@ -7,6 +7,7 @@ your triage decisions (read/archived/snoozed) are preserved.
 """
 
 import json
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, DateTime, String, Text, select
@@ -46,6 +47,8 @@ class NotificationRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
+# SECURITY TODO: Encrypt access_token and refresh_token at rest
+# using cryptography.fernet with a key from ENV_TOKEN_ENCRYPTION_KEY
 class TokenStore(Base):
     """Store OAuth tokens securely (encrypted in production)."""
 
@@ -71,7 +74,7 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session."""
     async with async_session() as session:
         yield session

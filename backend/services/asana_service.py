@@ -37,7 +37,7 @@ class AsanaService(BaseService):
     async def connect(self) -> bool:
         """Verify Asana credentials."""
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.get(
                     f"{self.BASE_URL}/users/me",
                     headers=self._headers,
@@ -57,7 +57,7 @@ class AsanaService(BaseService):
         """Fetch recent tasks assigned to you."""
         notifications = []
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 # Get tasks assigned to me
                 resp = await client.get(
                     f"{self.BASE_URL}/tasks",
@@ -85,7 +85,7 @@ class AsanaService(BaseService):
         """Poll for task updates."""
         while self._running:
             try:
-                async with httpx.AsyncClient() as client:
+                async with httpx.AsyncClient(timeout=30.0) as client:
                     params = {
                         "assignee": "me",
                         "workspace": settings.asana_default_workspace_gid,
@@ -122,7 +122,7 @@ class AsanaService(BaseService):
         """Create a new task in Asana."""
         try:
             project = project_gid or settings.asana_default_project_gid
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
                     f"{self.BASE_URL}/tasks",
                     headers={**self._headers, "Content-Type": "application/json"},

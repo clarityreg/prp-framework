@@ -7,6 +7,7 @@ but they all need to output the same voltage (Notification format).
 """
 
 import asyncio
+import contextlib
 from abc import ABC, abstractmethod
 
 from models.database import save_notification
@@ -64,6 +65,8 @@ class BaseService(ABC):
         self._running = False
         if self._task:
             self._task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._task
         await self.disconnect()
         await ws_manager.send_connection_status(self.source.value, False, self.account)
 

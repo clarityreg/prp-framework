@@ -77,7 +77,7 @@ class OutlookService(BaseService):
 
         notifications = []
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.get(
                     f"{self.GRAPH_BASE}/me/mailFolders/inbox/messages",
                     headers={"Authorization": f"Bearer {self._access_token}"},
@@ -103,7 +103,7 @@ class OutlookService(BaseService):
         """Poll for new messages using delta queries for efficiency."""
         while self._running:
             try:
-                async with httpx.AsyncClient() as client:
+                async with httpx.AsyncClient(timeout=30.0) as client:
                     if self._delta_link:
                         url = self._delta_link
                         params = {}
@@ -143,7 +143,7 @@ class OutlookService(BaseService):
     async def reply(self, source_id: str, body: str) -> bool:
         """Reply to an email."""
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
                     f"{self.GRAPH_BASE}/me/messages/{source_id}/reply",
                     headers={

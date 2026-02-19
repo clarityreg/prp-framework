@@ -38,6 +38,7 @@ class SlackService(BaseService):
         self._socket_client: SocketModeClient | None = None
         self._user_cache: dict[str, str] = {}  # user_id -> display_name
         self._channel_cache: dict[str, str] = {}  # channel_id -> channel_name
+        self._event_handler: object | None = None  # Store reference for cleanup
 
     async def connect(self) -> bool:
         """Set up Slack clients."""
@@ -61,6 +62,9 @@ class SlackService(BaseService):
 
     async def disconnect(self):
         if self._socket_client:
+            # Remove event handler to prevent duplicate listeners on reconnect
+            if self._event_handler in self._socket_client.socket_mode_request_listeners:
+                self._socket_client.socket_mode_request_listeners.remove(self._event_handler)
             await self._socket_client.close()
 
     async def fetch_recent(self, limit: int = 20) -> list[Notification]:
@@ -120,6 +124,7 @@ class SlackService(BaseService):
                         await self.emit_notification(notification)
 
         # Register the handler and start listening
+        self._event_handler = handle_event
         self._socket_client.socket_mode_request_listeners.append(handle_event)
         await self._socket_client.connect()
 

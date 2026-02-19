@@ -44,6 +44,7 @@ if trivy fs --scanners vuln --severity HIGH,CRITICAL \
     echo "Vulnerability scan complete"
 else
     echo "WARNING: Vulnerability scan found issues (check above)"
+    FAILED=1
 fi
 echo ""
 

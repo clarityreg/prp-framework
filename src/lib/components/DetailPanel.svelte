@@ -69,7 +69,7 @@
   <div class="detail-panel">
     <div class="detail-header">
       <div class="header-left">
-        <span class="source-badge" style="background: {config.color}">{config.icon} {config.label}</span>
+        <span class="source-badge" style="background: {config?.color}">{config?.icon} {config?.label}</span>
         <span class="account-label">{notif.source_account}</span>
       </div>
       <button class="close-btn" on:click={close}>✕</button>
@@ -81,7 +81,7 @@
       <div class="detail-meta">
         <span class="meta-sender">{notif.sender_name}</span>
         <span class="meta-time">{formatDate(notif.timestamp)}</span>
-        {#if notif.priority !== 'normal'}
+        {#if notif.priority !== 'normal' && PRIORITY_CONFIG[notif.priority]}
           <span class="meta-priority" style="color: {PRIORITY_CONFIG[notif.priority].color}">
             ● {PRIORITY_CONFIG[notif.priority].label}
           </span>

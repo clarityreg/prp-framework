@@ -59,7 +59,9 @@ class GmailService(BaseService):
             )
 
             if creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: creds.refresh(Request())
+                )
                 from auth.google import save_tokens
 
                 await save_tokens(

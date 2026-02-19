@@ -7,7 +7,7 @@ before reaching your frontend.
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal
 
@@ -65,7 +65,7 @@ class Notification(BaseModel):
     sender_avatar: str | None = None  # URL to avatar
 
     # Metadata
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     priority: Priority = Priority.NORMAL
     triage_status: TriageStatus = TriageStatus.UNREAD
     is_actionable: bool = True  # Can we reply/action from the app?
@@ -101,7 +101,7 @@ class TaskCreate(BaseModel):
     """Create a task from a notification."""
 
     title: str
-    description: str | None = ""
+    description: str = ""
     target: Literal["plane", "asana"]  # Where to create the task
     priority: Priority = Priority.NORMAL
     project_id: str | None = None  # Override default project

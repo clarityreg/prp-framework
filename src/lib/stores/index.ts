@@ -22,7 +22,10 @@ function createNotificationStore() {
     /** Add a new notification (or update if it already exists) */
     addOrUpdate(notification: Notification) {
       update(items => {
-        const idx = items.findIndex(n => n.id === notification.id || n.source_id === notification.source_id);
+        const idx = items.findIndex(n =>
+            n.id === notification.id ||
+            (n.source === notification.source && n.source_id === notification.source_id)
+        );
         if (idx >= 0) {
           items[idx] = { ...items[idx], ...notification };
           return [...items];

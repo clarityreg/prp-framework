@@ -7,6 +7,7 @@ Handles the full OAuth flow:
 3. Store/load tokens from the database
 """
 
+import asyncio
 from datetime import datetime
 
 from google_auth_oauthlib.flow import Flow
@@ -56,20 +57,24 @@ def build_auth_url(email: str) -> str:
     return auth_url
 
 
-def exchange_code(code: str) -> dict:
+async def exchange_code(code: str) -> dict:
     """Exchange an authorization code for access + refresh tokens."""
-    flow = Flow.from_client_config(
-        _make_client_config(),
-        scopes=GMAIL_SCOPES,
-        redirect_uri=settings.google_redirect_uri,
-    )
-    flow.fetch_token(code=code)
-    creds = flow.credentials
-    return {
-        "access_token": creds.token,
-        "refresh_token": creds.refresh_token,
-        "expires_at": creds.expiry.isoformat() if creds.expiry else None,
-    }
+
+    def _exchange():
+        flow = Flow.from_client_config(
+            _make_client_config(),
+            scopes=GMAIL_SCOPES,
+            redirect_uri=settings.google_redirect_uri,
+        )
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+        return {
+            "access_token": creds.token,
+            "refresh_token": creds.refresh_token,
+            "expires_at": creds.expiry.isoformat() if creds.expiry else None,
+        }
+
+    return await asyncio.to_thread(_exchange)
 
 
 async def save_tokens(email: str, tokens: dict) -> None:
