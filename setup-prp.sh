@@ -19,6 +19,9 @@ chmod +x "$HOOKS_DIR/verify_file_size.py" 2>/dev/null || true
 chmod +x "$HOOKS_DIR/structure_change.py" 2>/dev/null || true
 chmod +x "$HOOKS_DIR/auto-format.sh" 2>/dev/null || true
 
+# Make pre-commit scripts executable
+chmod +x "$SCRIPT_DIR/scripts/"*.sh 2>/dev/null || true
+
 # Check for required dependencies
 echo "Checking dependencies..."
 
@@ -29,6 +32,23 @@ fi
 if ! command -v say &> /dev/null; then
     echo "Warning: 'say' command not found. Audio hooks require macOS."
 fi
+
+# Install pre-commit hooks
+if command -v pre-commit &> /dev/null; then
+    echo "Installing pre-commit hooks..."
+    pre-commit install
+    echo "Pre-commit hooks installed."
+else
+    echo "Warning: pre-commit not found. Install with: pip install pre-commit"
+    echo "  Then run: pre-commit install"
+fi
+
+# Check optional tools
+for tool in trivy coderabbit ruff; do
+    if ! command -v "$tool" &> /dev/null; then
+        echo "Warning: $tool not found (optional pre-commit hook)."
+    fi
+done
 
 # Generate audio files (macOS only)
 if command -v say &> /dev/null && command -v afplay &> /dev/null; then

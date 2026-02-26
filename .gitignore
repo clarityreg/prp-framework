@@ -1,0 +1,6 @@
+.DS_Store
+*.tar.gz
+security-reports/
+e2e-screenshots/
+e2e-test-report.md
+.secrets.baseline

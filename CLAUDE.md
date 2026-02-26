@@ -22,6 +22,8 @@ All commands use the `/prp-*` namespace:
 | `/prp-validate [scope]` | Run comprehensive validation | None |
 | `/prp-primer` | Load project context | Reports Archon status |
 | `/prp-coderabbit [scope]` | Run CodeRabbit AI code review | None |
+| `/e2e-test` | Full E2E testing with agent-browser | Creates tasks per journey |
+| `/agent-browser` | Browser automation reference (agent-browser CLI) | None |
 
 ## Archon MCP Integration
 
@@ -101,7 +103,9 @@ When Archon is available, the Ralph loop:
 │   ├── prp-pr.md
 │   ├── prp-validate.md
 │   ├── prp-primer.md
-│   └── prp-coderabbit.md    # CodeRabbit AI review
+│   ├── prp-coderabbit.md    # CodeRabbit AI review
+│   ├── e2e-test.md          # E2E testing with agent-browser
+│   └── agent-browser.md     # Browser automation CLI reference
 ├── agents/                  # Specialized agent prompts
 │   └── code-simplifier.md   # Post-implementation simplification
 ├── hooks/                   # Automation hooks
@@ -113,16 +117,21 @@ When Archon is available, the Ralph loop:
 │   └── reviews/            # PR reviews
 └── settings.json           # Hook configuration
 
+scripts/                     # Pre-commit supporting scripts
+├── lint-frontend.sh        # ESLint wrapper for frontend
+├── check-file-size.sh      # Python file size enforcement
+└── trivy-precommit.sh      # Trivy security scan + reporting
+
 ralph/                       # Ralph autonomous loop
 ├── loop.sh                 # Main loop script
 ├── PROMPT_unified.md       # + Archon sync
 ├── PROMPT_plan.md
 ├── PROMPT_verify.md
 ├── AGENTS.md
-├── IMPLEMENTATION_PLAN.md
-└── specs/
+└── IMPLEMENTATION_PLAN.md
 
-ARCHON-INTEGRATION.md       # Archon documentation
+.pre-commit-config.yaml      # Pre-commit hook configuration
+.gitignore                   # Git ignore rules
 ```
 
 ## Fallback Behavior
@@ -174,6 +183,40 @@ All commands gracefully handle missing Archon:
 # Run Ralph loop for autonomous implementation
 ./ralph/loop.sh 5
 ```
+
+## Pre-commit Hooks
+
+The framework includes a `.pre-commit-config.yaml` with 16 hooks in execution order:
+
+| Hook | Scope | Blocking |
+|------|-------|----------|
+| `ruff` (lint + fix) | `backend/`, `tests/` | Yes |
+| `ruff-format` | `backend/`, `tests/` | Yes |
+| `vulture` (dead code) | `backend/` | Yes |
+| `bandit` (security) | `backend/` | Yes |
+| `eslint-frontend` | `frontend/**/*.{ts,tsx}` | Yes |
+| `python-file-size` (< 500 lines) | `backend/**/*.py` | Yes |
+| `detect-secrets` | All (excl. `.lock`, `.min.js`) | Yes |
+| `trivy-scan` | All staged files | CRITICAL only |
+| `coderabbit-review` | All staged files | No (advisory) |
+| `trailing-whitespace` | All | Yes (auto-fix) |
+| `end-of-file-fixer` | All | Yes (auto-fix) |
+| `check-yaml` | `*.yaml` | Yes |
+| `check-added-large-files` (> 1MB) | All (excl. `.icns`) | Yes |
+| `check-merge-conflict` | All | Yes |
+| `detect-private-key` | All | Yes |
+
+### Skipping Hooks
+
+```bash
+SKIP=coderabbit-review git commit -m "quick fix"
+SKIP=coderabbit-review,trivy-scan git commit -m "skip slow hooks"
+```
+
+### Project-Specific Hooks
+
+Hooks scoped to `backend/` or `frontend/` only run when those directories exist.
+Configure tool settings in `pyproject.toml` (ruff, bandit) and `.coderabbit.yaml`.
 
 ## Key Principles
 
