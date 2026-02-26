@@ -108,6 +108,12 @@ When Archon is available, the Ralph loop:
 │   └── agent-browser.md     # Browser automation CLI reference
 ├── agents/                  # Specialized agent prompts
 │   └── code-simplifier.md   # Post-implementation simplification
+├── scripts/                 # Git workflow hooks
+│   ├── branch_guard.py      # Blocks changes on protected branches
+│   ├── branch_naming.py     # Enforces branch naming conventions
+│   ├── commit_scope.py      # Warns on mixed-concern commits
+│   ├── prepush_checklist.py # Pre-push review checklist
+│   └── session_context.py   # Injects git state on session start
 ├── hooks/                   # Automation hooks
 │   └── auto-format.sh       # Auto-format on Write/Edit
 ├── PRPs/                    # Artifact storage
