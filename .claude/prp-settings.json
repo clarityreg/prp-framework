@@ -1,0 +1,23 @@
+{
+  "project": {
+    "name": "",
+    "type": "",
+    "backend_dir": "backend",
+    "frontend_dir": "frontend"
+  },
+  "plane": {
+    "workspace_slug": "",
+    "project_id": "",
+    "backlog_state_id": "",
+    "api_url": "https://api.plane.so/api/v1"
+  },
+  "claude_secure_path": "",
+  "coverage": {
+    "targets": { "overall": 80, "critical": 90 }
+  },
+  "ci": {
+    "use_npm_ci": true,
+    "node_version": "20",
+    "python_version": "3.12"
+  }
+}

@@ -20,10 +20,52 @@ All commands use the `/prp-*` namespace:
 | `/prp-commit [target]` | Smart git commit | None |
 | `/prp-pr [base]` | Create pull request | None |
 | `/prp-validate [scope]` | Run comprehensive validation | None |
+| `/prp-explain <file-or-function>` | Explain code with control/data flow analysis | None |
+| `/prp-test <file-or-description>` | Generate tests matching project conventions | None |
+| `/prp-doctor` | Diagnose project health (env, structure, git) | Checks Plane status |
+| `/prp-obsidian [content]` | Add a note to the Obsidian vault | None |
 | `/prp-primer` | Load project context | Reports Archon status |
 | `/prp-coderabbit [scope]` | Run CodeRabbit AI code review | None |
+| `/prp-ci-init` | Initialize CI/CD workflows from templates | None |
+| `/prp-coverage` | Run tests and generate coverage reports | None |
+| `/prp-branches` | Interactive branch/PR visualization | None |
 | `/e2e-test` | Full E2E testing with agent-browser | Creates tasks per journey |
 | `/agent-browser` | Browser automation reference (agent-browser CLI) | None |
+
+## Project Settings
+
+The framework uses `.claude/prp-settings.json` as a shared configuration file read by hooks, scripts, CI templates, and the TUI browser.
+
+```json
+{
+  "project": {
+    "name": "",
+    "type": "",
+    "backend_dir": "backend",
+    "frontend_dir": "frontend"
+  },
+  "plane": {
+    "workspace_slug": "",
+    "project_id": "",
+    "backlog_state_id": "",
+    "api_url": "https://api.plane.so/api/v1"
+  },
+  "claude_secure_path": "",
+  "coverage": {
+    "targets": { "overall": 80, "critical": 90 }
+  },
+  "ci": {
+    "use_npm_ci": true,
+    "node_version": "20",
+    "python_version": "3.12"
+  }
+}
+```
+
+- **Python hooks** use `.claude/hooks/prp_settings.py` (`load_settings()`, `get_plane_config()`)
+- **Lua TUI** uses `config.load_prp_settings()` and `config.save_prp_settings()`
+- **Plane API key** is always read from `.env` or `PLANE_API_KEY` env var — never stored in settings JSON
+- **Template file**: `.claude/prp-settings.template.json` is copied on `setup-prp.sh` if no settings exist
 
 ## Archon MCP Integration
 
@@ -102,10 +144,22 @@ When Archon is available, the Ralph loop:
 │   ├── prp-commit.md
 │   ├── prp-pr.md
 │   ├── prp-validate.md
+│   ├── prp-explain.md      # Code explanation with call/data flow
+│   ├── prp-test.md         # Test scaffolding matching conventions
+│   ├── prp-doctor.md       # Project health diagnostics
+│   ├── prp-obsidian.md     # Add note to Obsidian vault
 │   ├── prp-primer.md
 │   ├── prp-coderabbit.md    # CodeRabbit AI review
+│   ├── prp-ci-init.md       # Initialize CI/CD from templates
+│   ├── prp-coverage.md      # Coverage report generation
+│   ├── prp-branches.md      # Branch/PR visualization
 │   ├── e2e-test.md          # E2E testing with agent-browser
 │   └── agent-browser.md     # Browser automation CLI reference
+├── skills/                  # Auto-triggered skills (context-aware)
+│   ├── prp-test-nudge/      # Detects missing test files
+│   ├── prp-decision-capture/ # Captures architecture decisions to Obsidian
+│   ├── prp-security-nudge/  # Flags security anti-patterns at write time
+│   └── prp-context-enricher/ # Surfaces related context when entering a code area
 ├── agents/                  # Specialized agent prompts
 │   └── code-simplifier.md   # Post-implementation simplification
 ├── scripts/                 # Git workflow hooks
@@ -115,18 +169,29 @@ When Archon is available, the Ralph loop:
 │   ├── prepush_checklist.py # Pre-push review checklist
 │   └── session_context.py   # Injects git state on session start
 ├── hooks/                   # Automation hooks
-│   └── auto-format.sh       # Auto-format on Write/Edit
+│   ├── auto-format.sh       # Auto-format on Write/Edit
+│   └── prp_settings.py      # Shared settings loader (Python)
+├── templates/ci/            # CI workflow templates
+│   ├── ci.yml.template
+│   ├── deploy.yml.template
+│   └── electron-release.yml.template
+├── prp-settings.json        # Shared project settings
+├── prp-settings.template.json # Settings template (copied on setup)
 ├── PRPs/                    # Artifact storage
 │   ├── prds/               # PRD documents
 │   ├── plans/              # Implementation plans
 │   ├── issues/             # Issue investigations
-│   └── reviews/            # PR reviews
+│   ├── reviews/            # PR reviews
+│   ├── coverage/           # Coverage reports (gitignored)
+│   └── branches/           # Branch visualizations (gitignored)
 └── settings.json           # Hook configuration
 
 scripts/                     # Pre-commit supporting scripts
 ├── lint-frontend.sh        # ESLint wrapper for frontend
 ├── check-file-size.sh      # Python file size enforcement
-└── trivy-precommit.sh      # Trivy security scan + reporting
+├── trivy-precommit.sh      # Trivy security scan + reporting
+├── coverage-report.sh      # Test coverage report generator
+└── branch-viz.py           # Branch/PR visualization HTML
 
 ralph/                       # Ralph autonomous loop
 ├── loop.sh                 # Main loop script
@@ -223,6 +288,24 @@ SKIP=coderabbit-review,trivy-scan git commit -m "skip slow hooks"
 
 Hooks scoped to `backend/` or `frontend/` only run when those directories exist.
 Configure tool settings in `pyproject.toml` (ruff, bandit) and `.coderabbit.yaml`.
+
+## Auto-Triggered Skills
+
+Skills are context-aware behaviors that Claude activates automatically — no `/command` needed. They complement commands (explicit) and hooks (mechanical) with intelligent, advisory nudges.
+
+| Skill | Category | Trigger | Action |
+|-------|----------|---------|--------|
+| `checking-test-coverage-gaps` | Guardrail | Source file edited with no test counterpart | Suggests `/prp-test <file>` |
+| `capturing-architecture-decisions` | Knowledge | New endpoint, migration, dependency, or service added | Offers to write ADR to Obsidian |
+| `detecting-security-antipatterns` | Guardrail | Code with hardcoded secrets, SQL injection, eval, etc. | Flags with severity + fix |
+| `enriching-session-context` | Context | User starts working on a new code area | Surfaces related Obsidian notes, PRPs, coverage, Plane tasks |
+
+**Design principles:**
+- **Advisory only** — skills never block or auto-execute. They suggest; the user decides.
+- **Once per topic** — no repeated nudges for the same file/area in a session.
+- **Complement hooks** — security skill catches issues at write time; pre-commit hooks catch at commit time.
+
+Skill definitions live in `.claude/skills/<skill-name>/SKILL.md`.
 
 ## Key Principles
 

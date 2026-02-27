@@ -201,6 +201,27 @@ open htmlcov/index.html
 open coverage/lcov-report/index.html
 ```
 
+### Coverage Persistence
+
+After running tests, save coverage reports to a timestamped directory using the coverage script:
+
+```bash
+bash scripts/coverage-report.sh
+```
+
+Reports are saved to `.claude/PRPs/coverage/{timestamp}/` and a summary is written to `.claude/PRPs/coverage/latest.json`:
+
+```json
+{
+  "timestamp": "...",
+  "type": "python|node|fullstack",
+  "overall_coverage": 85.3,
+  "report_path": ".claude/PRPs/coverage/20240115_103000"
+}
+```
+
+Use `/prp-coverage` for an interactive coverage run with automatic browser opening and target comparison.
+
 ---
 
 ## Phase 5: Build Verification
