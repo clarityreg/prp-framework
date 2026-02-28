@@ -111,6 +111,18 @@ repos:
         always_run: true
 
   # ──────────────────────────────────────────────
+  # QA Gate Check (Tests must pass)
+  # ──────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: qa-gate-check
+        name: qa gate check (tests must pass)
+        entry: scripts/qa-gate-check.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+  # ──────────────────────────────────────────────
   # CodeRabbit: AI Code Review
   # ──────────────────────────────────────────────
   - repo: local
