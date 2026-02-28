@@ -250,12 +250,7 @@ export async function getThemeById(id: string): Promise<ApiResponse<Theme>> {
         error: 'Theme not found'
       };
     }
-    
-    // Increment download count for public themes
-    if (theme.isPublic) {
-      incrementThemeDownloadCount(id);
-    }
-    
+
     return {
       success: true,
       data: theme
@@ -344,6 +339,11 @@ export async function exportThemeById(id: string): Promise<ApiResponse<any>> {
       };
     }
     
+    // Increment download count on explicit export
+    if (theme.isPublic) {
+      incrementThemeDownloadCount(id);
+    }
+
     const exportData = {
       version: '1.0.0',
       theme: {

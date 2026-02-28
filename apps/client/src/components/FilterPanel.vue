@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { FilterOptions } from '../types';
 import { API_BASE_URL } from '../config';
 
@@ -113,9 +113,17 @@ const fetchFilterOptions = async () => {
   }
 };
 
+let intervalId: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
   fetchFilterOptions();
   // Refresh filter options periodically
-  setInterval(fetchFilterOptions, 10000);
+  intervalId = setInterval(fetchFilterOptions, 10000);
+});
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
 });
 </script>
