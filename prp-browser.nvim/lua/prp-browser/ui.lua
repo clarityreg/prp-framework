@@ -189,9 +189,9 @@ function M._render_browser_tree()
   local width = config.options.tree_width - 2 -- account for border
   local lines, highlights = tree_mod.render(flat_nodes, width)
 
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
 
   -- Apply highlights
   local ns = vim.api.nvim_create_namespace("prp_browser_tree")
@@ -207,9 +207,9 @@ function M._render_security_list()
   local width = config.options.tree_width - 2
   local lines, highlights = security.render_list(width)
 
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_tree")
   vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
@@ -224,9 +224,9 @@ function M._render_settings_list()
   local width = config.options.tree_width - 2
   local lines, highlights = settings_view.render_list(width)
 
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_tree")
   vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
@@ -241,9 +241,9 @@ function M._render_observability_list()
   local width = config.options.tree_width - 2
   local lines, highlights = observability.render_list(width)
 
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_tree")
   vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
@@ -269,9 +269,9 @@ function M._render_ralph_list()
   local width = config.options.tree_width - 2
   local lines, highlights = ralph.render_list(width)
 
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_tree")
   vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
@@ -407,9 +407,9 @@ function M._update_browser_preview()
       "",
       " Press Enter to expand",
     }
-    vim.api.nvim_buf_set_option(preview_popup.bufnr, "modifiable", true)
+    vim.api.nvim_set_option_value("modifiable", true, { buf = preview_popup.bufnr })
     vim.api.nvim_buf_set_lines(preview_popup.bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(preview_popup.bufnr, "modifiable", false)
+    vim.api.nvim_set_option_value("modifiable", false, { buf = preview_popup.bufnr })
 
     -- Update preview title
     if preview_popup.border then
@@ -438,9 +438,9 @@ function M._update_security_preview()
       preview_popup.border:set_text("top", " Finding Detail ", "center")
     end
     local lines = { "", "  Select a finding to see details" }
-    vim.api.nvim_buf_set_option(preview_popup.bufnr, "modifiable", true)
+    vim.api.nvim_set_option_value("modifiable", true, { buf = preview_popup.bufnr })
     vim.api.nvim_buf_set_lines(preview_popup.bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(preview_popup.bufnr, "modifiable", false)
+    vim.api.nvim_set_option_value("modifiable", false, { buf = preview_popup.bufnr })
   end
 end
 
@@ -596,7 +596,7 @@ function M._trigger_security_scan()
   end
 
   -- Show scanning state
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
   vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, {
     "",
     "  Scanning...",
@@ -604,7 +604,7 @@ function M._trigger_security_scan()
     "  Running claude-secure on",
     "  " .. root,
   })
-  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
   M._render_security_status()
 
   security.run_scan(root, function(success, err)
@@ -617,7 +617,7 @@ function M._trigger_security_scan()
       M._update_preview()
     else
       vim.notify("Security scan failed: " .. (err or "unknown"), vim.log.levels.ERROR)
-      vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+      vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
       vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, {
         "",
         "  Scan failed",
@@ -625,7 +625,7 @@ function M._trigger_security_scan()
         "",
         "  Press S to retry",
       })
-      vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+      vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
     end
     M._render_security_status()
   end)

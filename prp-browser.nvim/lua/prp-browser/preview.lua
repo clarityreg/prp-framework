@@ -62,13 +62,18 @@ function M.render(item, buf)
     end
   end
 
-  -- Show description if available
+  -- Show description if available (split on newlines for nvim_buf_set_lines)
   if item.description then
     table.insert(lines, "")
     header_line = header_line + 1
-    table.insert(lines, " " .. item.description)
-    table.insert(hl_marks, { line = header_line, group = "PRPBrowserMetaValue" })
-    header_line = header_line + 1
+    local desc_lines = vim.split(item.description, "\n")
+    for di, dl in ipairs(desc_lines) do
+      table.insert(lines, " " .. dl)
+      if di == 1 then
+        table.insert(hl_marks, { line = header_line, group = "PRPBrowserMetaValue" })
+      end
+      header_line = header_line + 1
+    end
   end
 
   table.insert(lines, "")
@@ -108,7 +113,7 @@ function M.render(item, buf)
   local ft = item.filetype
   if ft and ft ~= "" then
     -- Set a filetype-based syntax region for the content area
-    vim.api.nvim_buf_set_option(buf, "syntax", "")
+    vim.api.nvim_set_option_value("syntax", "", { buf = buf })
     local ok, parser_name = pcall(vim.treesitter.language.get_lang, ft)
     if not ok then
       parser_name = ft
@@ -123,9 +128,9 @@ function M.render(item, buf)
 end
 
 function M._set_lines(buf, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 end
 
 return M

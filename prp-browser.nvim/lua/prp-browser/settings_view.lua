@@ -230,9 +230,9 @@ function M.render_preview(entry, buf)
 
   if not entry then
     lines = { "", "  Select a setting to see details" }
-    vim.api.nvim_buf_set_option(buf, "modifiable", true)
+    vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+    vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
     return
   end
 
@@ -303,9 +303,9 @@ function M.render_preview(entry, buf)
     table.insert(lines, " Press w to save all settings to disk.")
   end
 
-  vim.api.nvim_buf_set_option(buf, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 
   local ns = vim.api.nvim_create_namespace("prp_settings_preview")
   vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)

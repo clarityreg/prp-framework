@@ -194,9 +194,9 @@ end
 function M.render_preview(finding, buf)
   if not finding then
     local lines = { "", "  Select a finding to see details" }
-    vim.api.nvim_buf_set_option(buf, "modifiable", true)
+    vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+    vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
     return
   end
 
@@ -265,9 +265,9 @@ function M.render_preview(finding, buf)
     table.insert(lines, "   " .. finding.context_snippet)
   end
 
-  vim.api.nvim_buf_set_option(buf, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 
   -- Apply highlights
   local ns = vim.api.nvim_create_namespace("prp_security_preview")

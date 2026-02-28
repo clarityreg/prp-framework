@@ -132,9 +132,9 @@ function M.show_help(parent_winid)
 
   popup:mount()
 
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
 
   -- Highlight title
   local ns = vim.api.nvim_create_namespace("prp_browser_help")
@@ -224,9 +224,9 @@ function M.show_security_help(parent_winid)
 
   popup:mount()
 
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_help")
   vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPBrowserCategory", 0, 0, -1)
@@ -298,9 +298,9 @@ function M.show_settings_help(parent_winid)
 
   popup:mount()
 
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_help")
   vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)
@@ -369,9 +369,9 @@ function M.show_observability_help(parent_winid)
 
   popup:mount()
 
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_help")
   vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)
@@ -438,9 +438,9 @@ function M.show_ralph_help(parent_winid)
 
   popup:mount()
 
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
 
   local ns = vim.api.nvim_create_namespace("prp_browser_help")
   vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)

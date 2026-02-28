@@ -36,7 +36,13 @@ WRITE_INDICATORS = re.compile(
     > (?!&)                      |  # redirect (but not >& which is fd redirect in read cmds)
     >> \s                        |  # append redirect
     \| \s* tee \s                |  # pipe to tee
-    ; \s* (?:rm|mv|cp|chmod|chown|mkdir|touch|kill|pkill)  # chained write cmds
+    ; \s* (?:rm|mv|cp|chmod|chown|mkdir|touch|kill|pkill)  |  # chained write cmds
+    \$\(                         |  # command substitution $(...)
+    `                            |  # backtick command substitution
+    -exec \s                     |  # find -exec (can run arbitrary commands)
+    \s -[dD] \s                  |  # destructive flags like git branch -D
+    \s --force\b                 |  # --force flag
+    \s --hard\b                     # --hard flag (git reset --hard)
     """,
     re.VERBOSE,
 )

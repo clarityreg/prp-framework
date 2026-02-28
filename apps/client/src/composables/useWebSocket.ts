@@ -10,7 +10,7 @@ export function useWebSocket(url: string) {
   let reconnectTimeout: number | null = null;
   
   // Get max events from environment variable or use default
-  const maxEvents = parseInt(import.meta.env.VITE_MAX_EVENTS_TO_DISPLAY || '300');
+  const maxEvents = parseInt(import.meta.env.VITE_MAX_EVENTS_TO_DISPLAY || '300') || 300;
   
   const connect = () => {
     try {

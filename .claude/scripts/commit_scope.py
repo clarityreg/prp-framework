@@ -54,6 +54,7 @@ for f in staged_files:
         if rule(f):
             domains_touched[domain].append(f)
             matched = True
+            break
     if not matched:
         domains_touched["other"].append(f)
 

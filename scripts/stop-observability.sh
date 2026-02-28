@@ -12,9 +12,9 @@ echo -e "${YELLOW}Stopping Observability Dashboard...${NC}"
 
 for port in $SERVER_PORT $CLIENT_PORT; do
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        PIDS=$(lsof -ti :$port 2>/dev/null)
+        PIDS=$(lsof -ti :"$port" 2>/dev/null)
     else
-        PIDS=$(lsof -ti :$port 2>/dev/null || fuser -n tcp $port 2>/dev/null | awk '{print $2}')
+        PIDS=$(lsof -ti :"$port" 2>/dev/null || fuser -n tcp "$port" 2>/dev/null | awk '{for (i=2; i<=NF; i++) print $i}')
     fi
 
     if [ -n "$PIDS" ]; then

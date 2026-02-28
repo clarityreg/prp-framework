@@ -34,7 +34,7 @@ VALID_PREFIXES = [
     "release/",
 ]
 
-VALID_PATTERN = re.compile(r"^(feature|fix|hotfix|chore|docs|refactor|test|release)/[a-z0-9][a-z0-9_-]+$")
+VALID_PATTERN = re.compile(r"^(feature|fix|hotfix|chore|docs|refactor|test|release)/[a-z0-9][a-z0-9-]+$")
 
 if not VALID_PATTERN.match(branch_name):
     print(json.dumps({
