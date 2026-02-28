@@ -57,6 +57,8 @@ function M._setup_highlights()
     PRPSettingsValue       = { default = true, fg = "#9ece6a" },
     PRPSettingsConnected   = { default = true, bold = true, fg = "#9ece6a" },
     PRPSettingsDisconnected = { default = true, bold = true, fg = "#f7768e" },
+    -- Install view highlights
+    PRPInstallButton = { default = true, bold = true, fg = "#1a1b26", bg = "#9ece6a" },
   }
 
   for name, opts in pairs(highlights) do

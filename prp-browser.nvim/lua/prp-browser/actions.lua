@@ -99,6 +99,7 @@ function M.show_help(parent_winid)
     "   c            Settings / config view",
     "   o            Observability dashboard view",
     "   R            Ralph autonomous loop view",
+    "   I            Install PRP into a project",
     "",
     " General",
     "   ?            Toggle this help",
@@ -126,7 +127,6 @@ function M.show_help(parent_winid)
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
     },
   })
 
@@ -218,7 +218,6 @@ function M.show_security_help(parent_winid)
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
     },
   })
 
@@ -292,7 +291,6 @@ function M.show_settings_help(parent_winid)
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
     },
   })
 
@@ -363,7 +361,6 @@ function M.show_observability_help(parent_winid)
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
     },
   })
 
@@ -432,7 +429,74 @@ function M.show_ralph_help(parent_winid)
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
+    },
+  })
+
+  popup:mount()
+
+  vim.api.nvim_set_option_value("modifiable", true, { buf = popup.bufnr })
+  vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = popup.bufnr })
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_help")
+  vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)
+
+  local function close()
+    popup:unmount()
+  end
+
+  for _, key in ipairs({ "<Esc>", "q", "?", "<CR>", "<Space>" }) do
+    popup:map("n", key, close, { noremap = true })
+  end
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = popup.bufnr,
+    once = true,
+    callback = close,
+  })
+end
+
+function M.show_install_help(parent_winid)
+  local Popup = require("nui.popup")
+
+  local help_lines = {
+    " Install PRP — Keybindings",
+    " " .. string.rep("─", 40),
+    "",
+    " Navigation",
+    "   j / k        Move down / up",
+    "",
+    " Actions",
+    "   Enter        Toggle component / trigger action",
+    "   Space        Toggle component checkbox",
+    "",
+    " General",
+    "   b / Esc      Back to browser view",
+    "   ?            Toggle this help",
+    "   q            Close browser",
+    "   Ctrl-d/u     Scroll preview",
+    "",
+    " " .. string.rep("─", 40),
+    " Press any key to close this help",
+  }
+
+  local popup = Popup({
+    position = "50%",
+    size = {
+      width = 48,
+      height = #help_lines + 2,
+    },
+    enter = true,
+    focusable = true,
+    border = {
+      style = "rounded",
+      text = {
+        top = " Install Help ",
+        top_align = "center",
+      },
+    },
+    buf_options = {
+      modifiable = false,
     },
   })
 

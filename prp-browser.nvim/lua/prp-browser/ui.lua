@@ -7,11 +7,24 @@ local security = require("prp-browser.security")
 local settings_view = require("prp-browser.settings_view")
 local observability = require("prp-browser.observability")
 local ralph = require("prp-browser.ralph")
+local install = require("prp-browser.install")
 
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
+local NuiText = require("nui.text")
 
 local M = {}
+
+--- Helper: set border text using NuiText to avoid truncation crashes in newer nui.nvim.
+---@param popup table  nui popup
+---@param edge string  "top" or "bottom"
+---@param text string
+---@param align string  "center", "left", "right"
+local function set_border_text(popup, edge, text, align)
+  if popup and popup.border then
+    popup.border:set_text(edge, NuiText(text, "FloatTitle"), align)
+  end
+end
 
 -- State
 local layout = nil
@@ -23,7 +36,7 @@ local flat_nodes = nil       -- flattened for display
 local scan_result = nil
 local current_filter = nil
 local cursor_line = 1
-local current_view = "browser" -- "browser", "security", "settings", "observability", or "ralph"
+local current_view = "browser" -- "browser", "security", "settings", "observability", "ralph", or "install"
 
 --- Open the PRP browser UI.
 function M.open()
@@ -52,13 +65,12 @@ function M.open()
     border = {
       style = opts.border,
       text = {
-        top = " PRP Browser ",
+        top = NuiText(" PRP Browser ", "FloatTitle"),
         top_align = "center",
       },
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
       buftype = "nofile",
       filetype = "prp-browser-tree",
     },
@@ -75,13 +87,12 @@ function M.open()
     border = {
       style = opts.border,
       text = {
-        top = " Preview ",
+        top = NuiText(" Preview ", "FloatTitle"),
         top_align = "center",
       },
     },
     buf_options = {
       modifiable = false,
-      readonly = true,
       buftype = "nofile",
     },
     win_options = {
@@ -110,6 +121,9 @@ function M.open()
   )
 
   layout:mount()
+
+  -- Focus the tree panel
+  vim.api.nvim_set_current_win(tree_popup.winid)
 
   -- Render tree
   current_view = "browser"
@@ -159,6 +173,7 @@ function M.close()
     settings_view.reset()
     observability.reset()
     ralph.reset()
+    install.reset()
   end
 end
 
@@ -179,6 +194,8 @@ function M._render_tree()
     M._render_observability_list()
   elseif current_view == "ralph" then
     M._render_ralph_list()
+  elseif current_view == "install" then
+    M._render_install_list()
   else
     M._render_browser_tree()
   end
@@ -260,9 +277,7 @@ function M._render_observability_status()
   if observability.is_busy() then
     status = "Starting/stopping..."
   end
-  if tree_popup.border then
-    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
-  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
 end
 
 function M._render_ralph_list()
@@ -285,17 +300,13 @@ end
 function M._render_ralph_status()
   if not tree_popup or not tree_popup.bufnr then return end
   local status = "[r]reload [b]back [?]help"
-  if tree_popup.border then
-    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
-  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
 end
 
 function M._render_settings_status()
   if not tree_popup or not tree_popup.bufnr then return end
   local status = "[w]save [r]refresh [p]project [t]state [b]back [?]help"
-  if tree_popup.border then
-    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
-  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
 end
 
 function M._render_status()
@@ -323,6 +334,11 @@ function M._render_status()
     return
   end
 
+  if current_view == "install" then
+    M._render_install_status()
+    return
+  end
+
   local total = 0
   if scan_result then
     for _, cat in ipairs(scan_result.categories) do
@@ -341,9 +357,7 @@ function M._render_status()
     status = filtered_count .. "/" .. total .. " (filter: " .. current_filter .. ")"
   end
 
-  if tree_popup.border then
-    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
-  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
 end
 
 function M._render_security_status()
@@ -356,9 +370,7 @@ function M._render_security_status()
     status = "Scanning..."
   end
 
-  if tree_popup.border then
-    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
-  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
 end
 
 -- ---------------------------------------------------------------------------
@@ -378,6 +390,8 @@ function M._update_preview()
     M._update_observability_preview()
   elseif current_view == "ralph" then
     M._update_ralph_preview()
+  elseif current_view == "install" then
+    M._update_install_preview()
   else
     M._update_browser_preview()
   end
@@ -412,14 +426,10 @@ function M._update_browser_preview()
     vim.api.nvim_set_option_value("modifiable", false, { buf = preview_popup.bufnr })
 
     -- Update preview title
-    if preview_popup.border then
-      preview_popup.border:set_text("top", " " .. node.text .. " ", "center")
-    end
+    set_border_text(preview_popup, "top", " " .. node.text .. " ", "center")
   elseif node.item then
     -- Update preview title
-    if preview_popup.border then
-      preview_popup.border:set_text("top", " " .. node.item.name .. " ", "center")
-    end
+    set_border_text(preview_popup, "top", " " .. node.item.name .. " ", "center")
     preview.render(node.item, preview_popup.bufnr)
   end
 end
@@ -429,14 +439,10 @@ function M._update_security_preview()
   local finding = security.get_finding_at(idx)
 
   if finding then
-    if preview_popup.border then
-      preview_popup.border:set_text("top", " Finding Detail ", "center")
-    end
+    set_border_text(preview_popup, "top", " Finding Detail ", "center")
     security.render_preview(finding, preview_popup.bufnr)
   else
-    if preview_popup.border then
-      preview_popup.border:set_text("top", " Finding Detail ", "center")
-    end
+    set_border_text(preview_popup, "top", " Finding Detail ", "center")
     local lines = { "", "  Select a finding to see details" }
     vim.api.nvim_set_option_value("modifiable", true, { buf = preview_popup.bufnr })
     vim.api.nvim_buf_set_lines(preview_popup.bufnr, 0, -1, false, lines)
@@ -448,9 +454,7 @@ function M._update_settings_preview()
   local idx   = settings_view.display_index_from_cursor(cursor_line)
   local entry = settings_view.get_entry_at(idx)
 
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Settings Detail ", "center")
-  end
+  set_border_text(preview_popup, "top", " Settings Detail ", "center")
   settings_view.render_preview(entry, preview_popup.bufnr)
 end
 
@@ -458,9 +462,7 @@ function M._update_observability_preview()
   local idx = observability.display_index_from_cursor(cursor_line)
   local ev = observability.get_event_at(idx)
 
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Event Detail ", "center")
-  end
+  set_border_text(preview_popup, "top", " Event Detail ", "center")
   observability.render_preview(ev, preview_popup.bufnr)
 end
 
@@ -469,9 +471,7 @@ function M._update_ralph_preview()
   local entry = ralph.get_entry_at(idx)
   local root = config.options.root_path
 
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Ralph Detail ", "center")
-  end
+  set_border_text(preview_popup, "top", " Ralph Detail ", "center")
   ralph.render_preview(entry, preview_popup.bufnr, root)
 end
 
@@ -482,12 +482,8 @@ end
 function M._switch_to_settings()
   current_view = "settings"
 
-  if tree_popup.border then
-    tree_popup.border:set_text("top", " PRP Settings ", "center")
-  end
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Settings Detail ", "center")
-  end
+  set_border_text(tree_popup, "top", " PRP Settings ", "center")
+  set_border_text(preview_popup, "top", " Settings Detail ", "center")
 
   settings_view.load_settings()
   M._render_tree()
@@ -501,9 +497,7 @@ function M._switch_to_security()
   current_view = "security"
   current_filter = nil
 
-  if tree_popup.border then
-    tree_popup.border:set_text("top", " Security Scan ", "center")
-  end
+  set_border_text(tree_popup, "top", " Security Scan ", "center")
 
   -- If no report data yet, trigger a scan immediately
   if not security.get_report() then
@@ -521,12 +515,8 @@ end
 function M._switch_to_observability()
   current_view = "observability"
 
-  if tree_popup.border then
-    tree_popup.border:set_text("top", " Observability ", "center")
-  end
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Event Detail ", "center")
-  end
+  set_border_text(tree_popup, "top", " Observability ", "center")
+  set_border_text(preview_popup, "top", " Event Detail ", "center")
 
   -- Check health and fetch events
   observability.check_health(function(ok)
@@ -556,12 +546,8 @@ end
 function M._switch_to_ralph()
   current_view = "ralph"
 
-  if tree_popup.border then
-    tree_popup.border:set_text("top", " Ralph Loop ", "center")
-  end
-  if preview_popup.border then
-    preview_popup.border:set_text("top", " Ralph Detail ", "center")
-  end
+  set_border_text(tree_popup, "top", " Ralph Loop ", "center")
+  set_border_text(preview_popup, "top", " Ralph Detail ", "center")
 
   local root = config.options.root_path
   ralph.load_data(root)
@@ -577,9 +563,7 @@ function M._switch_to_browser()
   current_filter = nil
   security.clear_filter()
 
-  if tree_popup.border then
-    tree_popup.border:set_text("top", " PRP Browser ", "center")
-  end
+  set_border_text(tree_popup, "top", " PRP Browser ", "center")
 
   M._render_tree()
   cursor_line = 1
@@ -671,6 +655,8 @@ function M._setup_keymaps()
     M._setup_observability_keymaps(map)
   elseif current_view == "ralph" then
     M._setup_ralph_keymaps(map)
+  elseif current_view == "install" then
+    M._setup_install_keymaps(map)
   else
     M._setup_browser_keymaps(map)
   end
@@ -810,6 +796,11 @@ function M._setup_browser_keymaps(map)
   map("R", function()
     M._switch_to_ralph()
   end)
+
+  -- Switch to install view
+  map("I", function()
+    M._switch_to_install()
+  end)
 end
 
 function M._setup_security_keymaps(map)
@@ -868,7 +859,7 @@ function M._setup_security_keymaps(map)
   end)
 
   -- Disable browser-specific keys in security view
-  for _, key in ipairs({ "l", "h", "e", "E", "y", "/", "c", "o" }) do
+  for _, key in ipairs({ "l", "h", "e", "E", "y", "/", "c", "o", "I" }) do
     map(key, function() end)
   end
 end
@@ -957,7 +948,7 @@ function M._setup_settings_keymaps(map)
   end)
 
   -- Disable keys that don't apply in settings view
-  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c", "o" }) do
+  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c", "o", "I" }) do
     map(key, function() end)
   end
 end
@@ -1060,7 +1051,7 @@ function M._setup_observability_keymaps(map)
   end)
 
   -- Disable keys that don't apply in observability view
-  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R" }) do
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
     map(key, function() end)
   end
 end
@@ -1105,7 +1096,104 @@ function M._setup_ralph_keymaps(map)
   end)
 
   -- Disable keys that don't apply in ralph view
-  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R" }) do
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
+    map(key, function() end)
+  end
+end
+
+-- ---------------------------------------------------------------------------
+-- Install view
+-- ---------------------------------------------------------------------------
+
+function M._switch_to_install()
+  current_view = "install"
+
+  set_border_text(tree_popup, "top", " Install PRP ", "center")
+  set_border_text(preview_popup, "top", " Component Detail ", "center")
+
+  install.reset()
+  M._render_tree()
+  cursor_line = 1
+  pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+  M._update_preview()
+  M._setup_keymaps()
+end
+
+function M._render_install_list()
+  local width = config.options.tree_width - 2
+  local lines, highlights = install.render_list(width)
+
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
+  vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_tree")
+  vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
+  for _, hl in ipairs(highlights) do
+    pcall(vim.api.nvim_buf_add_highlight, tree_popup.bufnr, ns, hl.group, hl.line - 1, hl.col_start or 0, hl.col_end or -1)
+  end
+
+  M._render_install_status()
+end
+
+function M._render_install_status()
+  if not tree_popup or not tree_popup.bufnr then return end
+  local status = "[Enter]toggle/act [b]back [?]help"
+  if install.is_busy() then
+    status = "Installing..."
+  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
+end
+
+function M._update_install_preview()
+  local idx = install.display_index_from_cursor(cursor_line)
+  local entry = install.get_entry_at(idx)
+
+  set_border_text(preview_popup, "top", " Component Detail ", "center")
+  install.render_preview(entry, preview_popup.bufnr)
+end
+
+function M._setup_install_keymaps(map)
+  -- Back to browser
+  map("b", function()
+    M._switch_to_browser()
+  end)
+
+  map("<Esc>", function()
+    M._switch_to_browser()
+  end)
+
+  -- Enter: toggle component or trigger action
+  map("<CR>", function()
+    local idx = install.display_index_from_cursor(cursor_line)
+    local entry = install.get_entry_at(idx)
+    install.handle_action(entry, function()
+      M._render_tree()
+      pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+      M._update_preview()
+      M._render_install_status()
+    end)
+  end)
+
+  -- Space: also toggle (natural for checkboxes)
+  map("<Space>", function()
+    local idx = install.display_index_from_cursor(cursor_line)
+    local entry = install.get_entry_at(idx)
+    if entry and entry.type == "component" then
+      install.toggle_component(entry.id)
+      M._render_tree()
+      pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+      M._update_preview()
+    end
+  end)
+
+  -- Help
+  map("?", function()
+    actions.show_install_help(tree_popup.winid)
+  end)
+
+  -- Disable keys that don't apply in install view
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
     map(key, function() end)
   end
 end
