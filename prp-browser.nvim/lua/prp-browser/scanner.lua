@@ -26,6 +26,13 @@ M.categories = {
     description = "Automation hooks (format, audio, checks)",
   },
   {
+    name = "Observability Hooks",
+    icon = "o",
+    dir = ".claude/hooks/observability",
+    pattern = "*.py",
+    description = "Dashboard event forwarding (send_event, model extractor)",
+  },
+  {
     name = "Scripts (.claude)",
     icon = "$",
     dir = ".claude/scripts",
@@ -36,8 +43,8 @@ M.categories = {
     name = "Scripts (root)",
     icon = "$",
     dir = "scripts",
-    pattern = "*.sh",
-    description = "Pre-commit supporting scripts",
+    pattern = { "*.sh", "*.py" },
+    description = "Pre-commit + observability scripts",
   },
   {
     name = "Ralph",
@@ -66,6 +73,13 @@ M.categories = {
     dir = ".claude/PRPs",
     pattern = "**/*.md",
     description = "Artifact storage (PRDs, plans, issues, reviews)",
+  },
+  {
+    name = "Observability Apps",
+    icon = "O",
+    dir = "apps",
+    pattern = { "server/package.json", "client/package.json", "server/src/*.ts", "client/src/*.ts", "client/src/*.vue" },
+    description = "Bun server + Vue dashboard for hook event visualization",
   },
   {
     name = "Root Config",

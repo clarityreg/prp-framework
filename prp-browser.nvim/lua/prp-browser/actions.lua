@@ -97,6 +97,8 @@ function M.show_help(parent_winid)
     " Views",
     "   s            Security scan view",
     "   c            Settings / config view",
+    "   o            Observability dashboard view",
+    "   R            Ralph autonomous loop view",
     "",
     " General",
     "   ?            Toggle this help",
@@ -285,6 +287,146 @@ function M.show_settings_help(parent_winid)
       style = "rounded",
       text = {
         top = " Settings Help ",
+        top_align = "center",
+      },
+    },
+    buf_options = {
+      modifiable = false,
+      readonly = true,
+    },
+  })
+
+  popup:mount()
+
+  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
+  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_help")
+  vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)
+
+  local function close()
+    popup:unmount()
+  end
+
+  for _, key in ipairs({ "<Esc>", "q", "?", "<CR>", "<Space>" }) do
+    popup:map("n", key, close, { noremap = true })
+  end
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = popup.bufnr,
+    once = true,
+    callback = close,
+  })
+end
+
+function M.show_observability_help(parent_winid)
+  local Popup = require("nui.popup")
+
+  local help_lines = {
+    " Observability — Keybindings",
+    " " .. string.rep("─", 40),
+    "",
+    " Navigation",
+    "   j / k        Move down / up",
+    "",
+    " Actions",
+    "   r            Refresh server status + events",
+    "   S            Start observability server",
+    "   X            Stop observability server",
+    "   d            Open dashboard in browser",
+    "",
+    " General",
+    "   b / Esc      Back to browser view",
+    "   ?            Toggle this help",
+    "   q            Close browser",
+    "   Ctrl-d/u     Scroll preview",
+    "",
+    " " .. string.rep("─", 40),
+    " Press any key to close this help",
+  }
+
+  local popup = Popup({
+    position = "50%",
+    size = {
+      width = 48,
+      height = #help_lines + 2,
+    },
+    enter = true,
+    focusable = true,
+    border = {
+      style = "rounded",
+      text = {
+        top = " Observability Help ",
+        top_align = "center",
+      },
+    },
+    buf_options = {
+      modifiable = false,
+      readonly = true,
+    },
+  })
+
+  popup:mount()
+
+  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", true)
+  vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, help_lines)
+  vim.api.nvim_buf_set_option(popup.bufnr, "modifiable", false)
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_help")
+  vim.api.nvim_buf_add_highlight(popup.bufnr, ns, "PRPSettingsSection", 0, 0, -1)
+
+  local function close()
+    popup:unmount()
+  end
+
+  for _, key in ipairs({ "<Esc>", "q", "?", "<CR>", "<Space>" }) do
+    popup:map("n", key, close, { noremap = true })
+  end
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = popup.bufnr,
+    once = true,
+    callback = close,
+  })
+end
+
+function M.show_ralph_help(parent_winid)
+  local Popup = require("nui.popup")
+
+  local help_lines = {
+    " Ralph Loop — Keybindings",
+    " " .. string.rep("─", 40),
+    "",
+    " Navigation",
+    "   j / k        Move down / up",
+    "",
+    " Actions",
+    "   Enter        Open selected file in editor",
+    "   r            Reload Ralph data",
+    "",
+    " General",
+    "   b / Esc      Back to browser view",
+    "   ?            Toggle this help",
+    "   q            Close browser",
+    "   Ctrl-d/u     Scroll preview",
+    "",
+    " " .. string.rep("─", 40),
+    " Press any key to close this help",
+  }
+
+  local popup = Popup({
+    position = "50%",
+    size = {
+      width = 48,
+      height = #help_lines + 2,
+    },
+    enter = true,
+    focusable = true,
+    border = {
+      style = "rounded",
+      text = {
+        top = " Ralph Help ",
         top_align = "center",
       },
     },

@@ -5,6 +5,8 @@ local preview = require("prp-browser.preview")
 local actions = require("prp-browser.actions")
 local security = require("prp-browser.security")
 local settings_view = require("prp-browser.settings_view")
+local observability = require("prp-browser.observability")
+local ralph = require("prp-browser.ralph")
 
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
@@ -21,7 +23,7 @@ local flat_nodes = nil       -- flattened for display
 local scan_result = nil
 local current_filter = nil
 local cursor_line = 1
-local current_view = "browser" -- "browser", "security", or "settings"
+local current_view = "browser" -- "browser", "security", "settings", "observability", or "ralph"
 
 --- Open the PRP browser UI.
 function M.open()
@@ -155,6 +157,8 @@ function M.close()
     current_view = "browser"
     security.reset()
     settings_view.reset()
+    observability.reset()
+    ralph.reset()
   end
 end
 
@@ -171,6 +175,10 @@ function M._render_tree()
     M._render_security_list()
   elseif current_view == "settings" then
     M._render_settings_list()
+  elseif current_view == "observability" then
+    M._render_observability_list()
+  elseif current_view == "ralph" then
+    M._render_ralph_list()
   else
     M._render_browser_tree()
   end
@@ -229,6 +237,59 @@ function M._render_settings_list()
   M._render_settings_status()
 end
 
+function M._render_observability_list()
+  local width = config.options.tree_width - 2
+  local lines, highlights = observability.render_list(width)
+
+  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_tree")
+  vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
+  for _, hl in ipairs(highlights) do
+    pcall(vim.api.nvim_buf_add_highlight, tree_popup.bufnr, ns, hl.group, hl.line - 1, hl.col_start or 0, hl.col_end or -1)
+  end
+
+  M._render_observability_status()
+end
+
+function M._render_observability_status()
+  if not tree_popup or not tree_popup.bufnr then return end
+  local status = "[r]refresh [S]start [X]stop [d]dashboard [b]back [?]help"
+  if observability.is_busy() then
+    status = "Starting/stopping..."
+  end
+  if tree_popup.border then
+    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
+  end
+end
+
+function M._render_ralph_list()
+  local width = config.options.tree_width - 2
+  local lines, highlights = ralph.render_list(width)
+
+  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", true)
+  vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(tree_popup.bufnr, "modifiable", false)
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_tree")
+  vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
+  for _, hl in ipairs(highlights) do
+    pcall(vim.api.nvim_buf_add_highlight, tree_popup.bufnr, ns, hl.group, hl.line - 1, hl.col_start or 0, hl.col_end or -1)
+  end
+
+  M._render_ralph_status()
+end
+
+function M._render_ralph_status()
+  if not tree_popup or not tree_popup.bufnr then return end
+  local status = "[r]reload [b]back [?]help"
+  if tree_popup.border then
+    tree_popup.border:set_text("bottom", " " .. status .. " ", "center")
+  end
+end
+
 function M._render_settings_status()
   if not tree_popup or not tree_popup.bufnr then return end
   local status = "[w]save [r]refresh [p]project [t]state [b]back [?]help"
@@ -249,6 +310,16 @@ function M._render_status()
 
   if current_view == "settings" then
     M._render_settings_status()
+    return
+  end
+
+  if current_view == "observability" then
+    M._render_observability_status()
+    return
+  end
+
+  if current_view == "ralph" then
+    M._render_ralph_status()
     return
   end
 
@@ -303,6 +374,10 @@ function M._update_preview()
     M._update_security_preview()
   elseif current_view == "settings" then
     M._update_settings_preview()
+  elseif current_view == "observability" then
+    M._update_observability_preview()
+  elseif current_view == "ralph" then
+    M._update_ralph_preview()
   else
     M._update_browser_preview()
   end
@@ -379,6 +454,27 @@ function M._update_settings_preview()
   settings_view.render_preview(entry, preview_popup.bufnr)
 end
 
+function M._update_observability_preview()
+  local idx = observability.display_index_from_cursor(cursor_line)
+  local ev = observability.get_event_at(idx)
+
+  if preview_popup.border then
+    preview_popup.border:set_text("top", " Event Detail ", "center")
+  end
+  observability.render_preview(ev, preview_popup.bufnr)
+end
+
+function M._update_ralph_preview()
+  local idx = ralph.display_index_from_cursor(cursor_line)
+  local entry = ralph.get_entry_at(idx)
+  local root = config.options.root_path
+
+  if preview_popup.border then
+    preview_popup.border:set_text("top", " Ralph Detail ", "center")
+  end
+  ralph.render_preview(entry, preview_popup.bufnr, root)
+end
+
 -- ---------------------------------------------------------------------------
 -- View switching
 -- ---------------------------------------------------------------------------
@@ -419,6 +515,60 @@ function M._switch_to_security()
     M._update_preview()
   end
 
+  M._setup_keymaps()
+end
+
+function M._switch_to_observability()
+  current_view = "observability"
+
+  if tree_popup.border then
+    tree_popup.border:set_text("top", " Observability ", "center")
+  end
+  if preview_popup.border then
+    preview_popup.border:set_text("top", " Event Detail ", "center")
+  end
+
+  -- Check health and fetch events
+  observability.check_health(function(ok)
+    if not layout then return end
+    if ok then
+      observability.fetch_events(function()
+        if not layout then return end
+        M._render_tree()
+        cursor_line = 1
+        pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+        M._update_preview()
+      end)
+    else
+      M._render_tree()
+      cursor_line = 1
+      pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+      M._update_preview()
+    end
+  end)
+
+  M._render_tree()
+  cursor_line = 1
+  pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+  M._setup_keymaps()
+end
+
+function M._switch_to_ralph()
+  current_view = "ralph"
+
+  if tree_popup.border then
+    tree_popup.border:set_text("top", " Ralph Loop ", "center")
+  end
+  if preview_popup.border then
+    preview_popup.border:set_text("top", " Ralph Detail ", "center")
+  end
+
+  local root = config.options.root_path
+  ralph.load_data(root)
+  M._render_tree()
+  cursor_line = 1
+  pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+  M._update_preview()
   M._setup_keymaps()
 end
 
@@ -517,6 +667,10 @@ function M._setup_keymaps()
     M._setup_security_keymaps(map)
   elseif current_view == "settings" then
     M._setup_settings_keymaps(map)
+  elseif current_view == "observability" then
+    M._setup_observability_keymaps(map)
+  elseif current_view == "ralph" then
+    M._setup_ralph_keymaps(map)
   else
     M._setup_browser_keymaps(map)
   end
@@ -646,6 +800,16 @@ function M._setup_browser_keymaps(map)
   map("c", function()
     M._switch_to_settings()
   end)
+
+  -- Switch to observability view
+  map("o", function()
+    M._switch_to_observability()
+  end)
+
+  -- Switch to ralph view
+  map("R", function()
+    M._switch_to_ralph()
+  end)
 end
 
 function M._setup_security_keymaps(map)
@@ -704,7 +868,7 @@ function M._setup_security_keymaps(map)
   end)
 
   -- Disable browser-specific keys in security view
-  for _, key in ipairs({ "l", "h", "e", "E", "y", "/" }) do
+  for _, key in ipairs({ "l", "h", "e", "E", "y", "/", "c", "o" }) do
     map(key, function() end)
   end
 end
@@ -793,7 +957,155 @@ function M._setup_settings_keymaps(map)
   end)
 
   -- Disable keys that don't apply in settings view
-  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c" }) do
+  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c", "o" }) do
+    map(key, function() end)
+  end
+end
+
+function M._setup_observability_keymaps(map)
+  -- Back to browser
+  map("b", function()
+    M._switch_to_browser()
+  end)
+
+  map("<Esc>", function()
+    M._switch_to_browser()
+  end)
+
+  -- Refresh: check health + fetch events
+  map("r", function()
+    observability.check_health(function(ok)
+      if not layout then return end
+      if ok then
+        observability.fetch_events(function()
+          if not layout then return end
+          M._render_tree()
+          pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+          M._update_preview()
+        end)
+      else
+        M._render_tree()
+        pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+        M._update_preview()
+      end
+      M._render_observability_status()
+    end)
+  end)
+
+  -- Start server
+  map("S", function()
+    local root = config.options.root_path
+    if not root then
+      vim.notify("No root_path configured", vim.log.levels.ERROR)
+      return
+    end
+    vim.notify("Starting observability server...", vim.log.levels.INFO)
+    M._render_observability_status()
+    observability.start_server(root, function(ok, msg)
+      if not layout then return end
+      if ok then
+        vim.notify("Observability server started", vim.log.levels.INFO)
+        -- Auto-refresh after start
+        observability.check_health(function()
+          if not layout then return end
+          observability.fetch_events(function()
+            if not layout then return end
+            M._render_tree()
+            pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+            M._update_preview()
+          end)
+          M._render_tree()
+          M._render_observability_status()
+        end)
+      else
+        vim.notify("Failed to start server: " .. (msg or "unknown"), vim.log.levels.ERROR)
+        M._render_observability_status()
+      end
+    end)
+  end)
+
+  -- Stop server
+  map("X", function()
+    local root = config.options.root_path
+    if not root then return end
+    vim.notify("Stopping observability server...", vim.log.levels.INFO)
+    observability.stop_server(root, function(ok)
+      if not layout then return end
+      if ok then
+        vim.notify("Observability server stopped", vim.log.levels.INFO)
+      end
+      observability.reset()
+      observability.check_health(function()
+        if not layout then return end
+        M._render_tree()
+        M._render_observability_status()
+      end)
+    end)
+  end)
+
+  -- Open dashboard in browser
+  map("d", function()
+    local url = "http://localhost:5173"
+    if vim.fn.has("mac") == 1 then
+      vim.fn.system({ "open", url })
+    elseif vim.fn.has("unix") == 1 then
+      vim.fn.system({ "xdg-open", url })
+    end
+    vim.notify("Opening dashboard: " .. url, vim.log.levels.INFO)
+  end)
+
+  -- Help
+  map("?", function()
+    actions.show_observability_help(tree_popup.winid)
+  end)
+
+  -- Disable keys that don't apply in observability view
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R" }) do
+    map(key, function() end)
+  end
+end
+
+function M._setup_ralph_keymaps(map)
+  -- Back to browser
+  map("b", function()
+    M._switch_to_browser()
+  end)
+
+  map("<Esc>", function()
+    M._switch_to_browser()
+  end)
+
+  -- Reload ralph data
+  map("r", function()
+    local root = config.options.root_path
+    ralph.load_data(root)
+    M._render_tree()
+    pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { cursor_line, 0 })
+    M._update_preview()
+    vim.notify("Ralph data reloaded", vim.log.levels.INFO)
+  end)
+
+  -- Open file under cursor in editor
+  map("<CR>", function()
+    local idx = ralph.display_index_from_cursor(cursor_line)
+    local entry = ralph.get_entry_at(idx)
+    if entry and entry.filename then
+      local root = config.options.root_path
+      local filepath = root .. "/ralph/" .. entry.filename
+      if vim.fn.filereadable(filepath) == 1 then
+        M.close()
+        vim.cmd("edit " .. vim.fn.fnameescape(filepath))
+      end
+    end
+  end)
+
+  -- Help
+  map("?", function()
+    actions.show_ralph_help(tree_popup.winid)
+  end)
+
+  -- Disable keys that don't apply in ralph view
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R" }) do
     map(key, function() end)
   end
 end

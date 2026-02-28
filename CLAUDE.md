@@ -170,7 +170,16 @@ When Archon is available, the Ralph loop:
 │   └── session_context.py   # Injects git state on session start
 ├── hooks/                   # Automation hooks
 │   ├── auto-format.sh       # Auto-format on Write/Edit
-│   └── prp_settings.py      # Shared settings loader (Python)
+│   ├── auto_allow_readonly.py # PermissionRequest: auto-approves read-only ops
+│   ├── backup_transcript.py # PreCompact: saves transcript before compaction
+│   ├── log_failures.py      # PostToolUseFailure: logs failures + plays error sound
+│   ├── status_line.py       # Status line: model, context %, branch, dirty, time
+│   ├── prp_settings.py      # Shared settings loader (Python)
+│   └── observability/       # Dashboard event forwarding
+│       ├── __init__.py
+│       ├── send_event.py    # HTTP POST to observability server
+│       ├── model_extractor.py # Model name from transcript
+│       └── constants.py     # Log directory config
 ├── templates/ci/            # CI workflow templates
 │   ├── ci.yml.template
 │   ├── deploy.yml.template
@@ -186,12 +195,18 @@ When Archon is available, the Ralph loop:
 │   └── branches/           # Branch visualizations (gitignored)
 └── settings.json           # Hook configuration
 
+apps/                        # Observability dashboard
+├── server/                 # Bun + SQLite event store (port 4000)
+└── client/                 # Vue + Vite dashboard (port 5173)
+
 scripts/                     # Pre-commit supporting scripts
 ├── lint-frontend.sh        # ESLint wrapper for frontend
 ├── check-file-size.sh      # Python file size enforcement
 ├── trivy-precommit.sh      # Trivy security scan + reporting
 ├── coverage-report.sh      # Test coverage report generator
-└── branch-viz.py           # Branch/PR visualization HTML
+├── branch-viz.py           # Branch/PR visualization HTML
+├── start-observability.sh  # Start dashboard server + client
+└── stop-observability.sh   # Stop dashboard processes
 
 ralph/                       # Ralph autonomous loop
 ├── loop.sh                 # Main loop script
@@ -306,6 +321,63 @@ Skills are context-aware behaviors that Claude activates automatically — no `/
 - **Complement hooks** — security skill catches issues at write time; pre-commit hooks catch at commit time.
 
 Skill definitions live in `.claude/skills/<skill-name>/SKILL.md`.
+
+## Observability Dashboard
+
+Real-time visualization of all Claude Code hook events via a Bun+SQLite server and Vue dashboard.
+
+### Startup
+
+```bash
+./scripts/start-observability.sh   # Start server (port 4000) + client (port 5173)
+./scripts/stop-observability.sh    # Stop both
+```
+
+- Dashboard: `http://localhost:5173`
+- Server API: `http://localhost:4000`
+- Health check: `http://localhost:4000/health`
+
+### How it Works
+
+Every hook event in `settings.json` has a secondary command that forwards the event JSON to the observability server via `.claude/hooks/observability/send_event.py`. This is **best-effort** — if the server isn't running, `send_event.py` exits silently (exit 0) and PRP hooks continue normally.
+
+### `--source-app` Pattern
+
+Each project identifies itself via `--source-app <name>`. PRP uses `--source-app prp-framework`. Future integrations (security tool, visualiser, test runner) will use their own names to appear as separate swim lanes in the dashboard.
+
+### Architecture
+
+```
+.claude/hooks/observability/
+├── __init__.py           # Package marker
+├── send_event.py         # HTTP POST to localhost:4000/events
+├── model_extractor.py    # Extracts model name from transcript
+├── constants.py          # Log directory configuration
+└── logs/                 # Session logs (gitignored)
+
+apps/
+├── server/               # Bun + SQLite event store
+│   └── src/              # TypeScript server (port 4000)
+└── client/               # Vue + Vite dashboard
+    └── src/              # TypeScript frontend (port 5173)
+```
+
+### Events Tracked
+
+| Event | PRP Hook | Observability |
+|-------|----------|---------------|
+| `SessionStart` | session_context.py, hook_handler.py | send_event.py |
+| `PreToolUse` | branch_guard.py, hook_handler.py | send_event.py |
+| `PostToolUse` | hook_handler.py | send_event.py |
+| `Stop` | hook_handler.py | send_event.py (+ `--add-chat`) |
+| `Notification` | hook_handler.py | send_event.py |
+| `SubagentStop` | hook_handler.py | send_event.py |
+| `PermissionRequest` | auto_allow_readonly.py | send_event.py |
+| `PreCompact` | backup_transcript.py | send_event.py |
+| `PostToolUseFailure` | log_failures.py | send_event.py |
+| `UserPromptSubmit` | — | send_event.py |
+| `SubagentStart` | — | send_event.py |
+| `SessionEnd` | — | send_event.py |
 
 ## Key Principles
 

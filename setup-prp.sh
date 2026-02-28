@@ -68,6 +68,24 @@ else
     echo "Skipping audio generation (not macOS or missing commands)"
 fi
 
+# Install observability dashboard dependencies
+if command -v bun &> /dev/null; then
+    echo "Installing observability dashboard dependencies..."
+    if [ -d "$SCRIPT_DIR/apps/server" ]; then
+        (cd "$SCRIPT_DIR/apps/server" && bun install --silent)
+        echo "  Server dependencies installed."
+    fi
+    if [ -d "$SCRIPT_DIR/apps/client" ]; then
+        (cd "$SCRIPT_DIR/apps/client" && bun install --silent)
+        echo "  Client dependencies installed."
+    fi
+    chmod +x "$SCRIPT_DIR/scripts/start-observability.sh" 2>/dev/null || true
+    chmod +x "$SCRIPT_DIR/scripts/stop-observability.sh" 2>/dev/null || true
+else
+    echo "Warning: bun not found. Observability dashboard requires Bun."
+    echo "  Install with: curl -fsSL https://bun.sh/install | bash"
+fi
+
 # Verify settings.json exists
 if [ -f "$CLAUDE_DIR/settings.json" ]; then
     echo "Settings file: $CLAUDE_DIR/settings.json"
@@ -82,11 +100,14 @@ echo "Directory structure:"
 echo "  .claude/"
 echo "  ├── settings.json         # Hook configuration"
 echo "  ├── prp-settings.json     # Project settings"
-echo "  ├── hooks/                # Hook scripts"
+echo "  ├── hooks/                # Hook scripts + observability/"
 echo "  ├── commands/             # PRP slash commands"
 echo "  ├── templates/ci/         # CI workflow templates"
 echo "  ├── agents/               # Agent definitions"
 echo "  └── PRPs/                 # Artifact storage"
+echo "  apps/"
+echo "  ├── server/               # Observability server (Bun)"
+echo "  └── client/               # Observability dashboard (Vue)"
 echo ""
 echo "Available commands:"
 echo "  /prp-prd          - Generate Product Requirements"

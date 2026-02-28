@@ -4,7 +4,7 @@ A lazygit-style floating TUI browser for the [PRP Framework](https://github.com/
 
 ## Features
 
-- **Category tree** with 10 auto-discovered categories (commands, agents, hooks, scripts, ralph, settings, etc.)
+- **Category tree** with 12 auto-discovered categories (commands, agents, hooks, observability, scripts, ralph, settings, etc.)
 - **Live preview** with syntax highlighting via treesitter and metadata headers
 - **Search/filter** across file names and descriptions
 - **Export** individual files or entire categories to other projects
@@ -83,6 +83,8 @@ Or with the default keymap: `<leader>pb`
 | `q` | Close browser |
 | `s` | Switch to Security scan view |
 | `c` | Switch to Settings / config view |
+| `o` | Switch to Observability dashboard view |
+| `R` | Switch to Ralph autonomous loop view |
 | `?` | Show help overlay |
 | `Ctrl-d` / `Ctrl-u` | Scroll preview pane down / up |
 
@@ -95,12 +97,14 @@ The browser auto-discovers files in these categories:
 | Commands | `.claude/commands/prp-core/` | PRP slash commands |
 | Agents | `.claude/agents/` | Specialized agent prompts |
 | Hooks | `.claude/hooks/` | Automation hooks (`.sh`, `.py`) |
+| Observability Hooks | `.claude/hooks/observability/` | Dashboard event forwarding |
 | Scripts (.claude) | `.claude/scripts/` | Git workflow scripts |
-| Scripts (root) | `scripts/` | Pre-commit supporting scripts |
+| Scripts (root) | `scripts/` | Pre-commit + observability scripts |
 | Ralph | `ralph/` | Autonomous dev loop |
 | Settings | `.claude/` | `settings*.json` files |
 | Pre-commit | `.` | `.pre-commit-config.yaml` |
 | PRPs | `.claude/PRPs/` | Artifacts (PRDs, plans, issues) |
+| Observability Apps | `apps/` | Bun server + Vue dashboard |
 | Root Config | `.` | `CLAUDE.md`, `.gitignore`, etc. |
 
 ## Highlight Groups
@@ -153,3 +157,98 @@ PLANE_API_KEY=your_key_here
 ```
 
 The pickers (`p` and `t`) require `plane.workspace_slug` (and `plane.project_id` for state picking) to be set first.
+
+## Observability View
+
+Press `o` from the browser to open the observability view. This connects to the local observability dashboard server (Bun + SQLite on port 4000) and displays recent Claude Code hook events in real-time.
+
+### Observability keymaps
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` | Move down / up |
+| `r` | Refresh server status and fetch events |
+| `S` | Start the observability server |
+| `X` | Stop the observability server |
+| `d` | Open the Vue dashboard in your browser |
+| `b` / `Esc` | Back to browser view |
+| `?` | Observability help overlay |
+| `q` | Close browser |
+
+### Server control
+
+The view can start and stop the observability server directly using the `scripts/start-observability.sh` and `scripts/stop-observability.sh` scripts. The server status is shown at the top of the view with a green/red indicator.
+
+### Event preview
+
+Select an event in the list to see full details in the preview pane, including event type, source app, timestamp, session ID, tool name, and raw JSON data.
+
+## Ralph View
+
+Press `R` from the browser to open the Ralph autonomous loop view. This shows the status of the Ralph development loop, including available modes, implementation plan progress, and Ralph configuration files.
+
+### Ralph keymaps
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` | Move down / up |
+| `Enter` | Open selected Ralph file in editor |
+| `r` | Reload Ralph data from disk |
+| `b` / `Esc` | Back to browser view |
+| `?` | Ralph help overlay |
+| `q` | Close browser |
+
+### What's shown
+
+- **Progress bar** — visual indicator of implementation plan completion
+- **Loop Modes** — unified, plan, build, verify with commands
+- **Implementation Plan** — task checklist from `IMPLEMENTATION_PLAN.md`
+- **Ralph Files** — all files in the `ralph/` directory with preview
+
+## Troubleshooting
+
+### "PRP framework not found" error
+
+The plugin searches upward from your current directory for `.claude/commands/prp-core/`. If not found, it falls back to git root + `.claude/`.
+
+**Fix:** Either `cd` into the PRP project root, or set `root_path` explicitly:
+
+```lua
+require("prp-browser").setup({
+  root_path = "~/Development/prp-framework",
+})
+```
+
+### Security view: "claude_secure.py not found"
+
+The security view needs the [claude-secure](https://github.com/clarityreg/claude-secure) scanner. Set the path in your config or `prp-settings.json`:
+
+```lua
+require("prp-browser").setup({
+  claude_secure_path = "~/Development/claude-secure/claude_secure.py",
+})
+```
+
+### Plane API: "Connection failed" in settings view
+
+1. Ensure `.env` exists in the project root with `PLANE_API_KEY=your_key`
+2. Set `plane.workspace_slug` first (press `Enter` on the field to edit)
+3. Press `r` to refresh the connection status
+4. Check the API URL matches your Plane instance (default: `https://api.plane.so/api/v1`)
+
+### Large PRPs directory is slow
+
+If `.claude/PRPs/` has many artifacts, the browser may take a moment to scan. The plugin reads file contents for metadata extraction — large files are truncated at 500 lines in preview.
+
+**Tip:** Coverage reports and branch visualizations are gitignored by default (`.claude/PRPs/coverage/`, `.claude/PRPs/branches/`), which helps keep scan times down.
+
+### Exporting categories to other projects
+
+Press `E` on a category header to export all files in that category to another directory. The export preserves relative paths, so:
+
+```
+Export "Commands" to ~/other-project/.claude/
+→ Creates ~/other-project/.claude/commands/prp-core/*.md
+```
+
+Press `e` on a single item to export just that file.
