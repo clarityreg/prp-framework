@@ -52,6 +52,19 @@ local SECTIONS = {
     },
   },
   {
+    key = "qa",
+    label = "Quality Assurance",
+    fields = {
+      { key = "tests_must_pass", label = "Tests Must Pass",  description = "Require zero test failures to pass quality gate",    type = "boolean" },
+      { key = "min_coverage",    label = "Min Coverage (%)",  description = "Minimum code coverage percentage (0-100)",           type = "number" },
+      { key = "max_p0_bugs",     label = "Max P0 Bugs",       description = "Maximum open P0 (system down/data loss) bugs",       type = "number" },
+      { key = "max_p1_bugs",     label = "Max P1 Bugs",       description = "Maximum open P1 (core feature broken) bugs",         type = "number" },
+      { key = "tracking_csv",    label = "Tracking CSV",      description = "Path to test results CSV file",                      type = "string" },
+      { key = "bug_dir",         label = "Bug Directory",      description = "Path to bug report storage directory",               type = "string" },
+      { key = "report_dir",      label = "Report Directory",   description = "Path to QA report storage directory",                type = "string" },
+    },
+  },
+  {
     key = "root",
     label = "Global",
     fields = {
@@ -94,6 +107,15 @@ function M._get_value(section_key, field_key)
   elseif section_key == "coverage" then
     local cov = settings_data.coverage or {}
     return (cov.targets or {})[field_key]
+  elseif section_key == "qa" then
+    local qa = settings_data.qa or {}
+    -- quality_gates fields are nested, other qa fields are top-level
+    local gates_fields = { tests_must_pass = true, min_coverage = true, max_p0_bugs = true, max_p1_bugs = true }
+    if gates_fields[field_key] then
+      return (qa.quality_gates or {})[field_key]
+    else
+      return qa[field_key]
+    end
   else
     return (settings_data[section_key] or {})[field_key]
   end
@@ -111,6 +133,15 @@ function M._set_value(section_key, field_key, value)
     if not settings_data.coverage then settings_data.coverage = {} end
     if not settings_data.coverage.targets then settings_data.coverage.targets = {} end
     settings_data.coverage.targets[field_key] = value
+  elseif section_key == "qa" then
+    if not settings_data.qa then settings_data.qa = {} end
+    local gates_fields = { tests_must_pass = true, min_coverage = true, max_p0_bugs = true, max_p1_bugs = true }
+    if gates_fields[field_key] then
+      if not settings_data.qa.quality_gates then settings_data.qa.quality_gates = {} end
+      settings_data.qa.quality_gates[field_key] = value
+    else
+      settings_data.qa[field_key] = value
+    end
   else
     if not settings_data[section_key] then settings_data[section_key] = {} end
     settings_data[section_key][field_key] = value

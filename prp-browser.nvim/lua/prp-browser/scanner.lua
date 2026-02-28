@@ -33,6 +33,20 @@ M.categories = {
     description = "Dashboard event forwarding (send_event, model extractor)",
   },
   {
+    name = "Skills",
+    icon = "!",
+    dir = ".claude/skills",
+    pattern = "**/SKILL.md",
+    description = "Auto-triggered context-aware behaviors",
+  },
+  {
+    name = "Templates",
+    icon = "T",
+    dir = ".claude/templates",
+    pattern = "**/*.md",
+    description = "QA and CI templates (bug reports, test cases, OWASP)",
+  },
+  {
     name = "Scripts (.claude)",
     icon = "$",
     dir = ".claude/scripts",
@@ -80,6 +94,13 @@ M.categories = {
     dir = "apps",
     pattern = { "server/package.json", "client/package.json", "server/src/*.ts", "client/src/*.ts", "client/src/*.vue" },
     description = "Bun server + Vue dashboard for hook event visualization",
+  },
+  {
+    name = "Tests",
+    icon = "t",
+    dir = "apps",
+    pattern = { "server/src/__tests__/*.test.ts", "client/src/composables/__tests__/*.test.ts" },
+    description = "Server (bun:test) and client (vitest) test suites",
   },
   {
     name = "Root Config",
