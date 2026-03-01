@@ -534,7 +534,6 @@ htmlcov/
 security-reports/
 e2e-screenshots/
 e2e-test-report.md
-.secrets.baseline
 apps/server/events.db*
 apps/server/node_modules/
 apps/client/node_modules/

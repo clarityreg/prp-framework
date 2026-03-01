@@ -28,7 +28,6 @@ htmlcov/
 security-reports/
 e2e-screenshots/
 e2e-test-report.md
-.secrets.baseline
 
 # Observability
 apps/server/events.db*
