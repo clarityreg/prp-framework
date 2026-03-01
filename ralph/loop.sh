@@ -8,6 +8,7 @@
 #   ./loop.sh plan [max_iterations]    - Run planning mode (gap analysis only)
 #   ./loop.sh verify [max_iterations]  - Run verify mode (visual testing & compliance)
 #   ./loop.sh build [max_iterations]   - Run build mode (implementation only - LEGACY)
+#   ./loop.sh qa [max_iterations]      - Run QA mode (test generation & coverage improvement)
 #
 # Examples:
 #   ./loop.sh            # Run unified mode indefinitely (RECOMMENDED)
@@ -15,6 +16,7 @@
 #   ./loop.sh plan 5     # Run 5 planning iterations
 #   ./loop.sh verify 3   # Run 3 verification iterations
 #   ./loop.sh build 10   # Run 10 build-only iterations (legacy)
+#   ./loop.sh qa 5       # Run 5 QA iterations (test generation)
 
 set -e
 
@@ -40,6 +42,11 @@ elif [ "$1" = "build" ]; then
     PROMPT_FILE="$SCRIPT_DIR/PROMPT_build.md"
     MAX_ITERATIONS=${2:-0}  # 0 = infinite
     echo "Running in BUILD mode (legacy - consider using unified mode)"
+elif [ "$1" = "qa" ]; then
+    MODE="qa"
+    PROMPT_FILE="$SCRIPT_DIR/PROMPT_qa.md"
+    MAX_ITERATIONS=${2:-0}  # 0 = infinite
+    echo "Running in QA mode (test generation & coverage improvement)"
 elif [[ "$1" =~ ^[0-9]+$ ]]; then
     # Number = unified mode with max iterations
     MODE="unified"

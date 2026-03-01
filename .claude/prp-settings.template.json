@@ -1,0 +1,34 @@
+{
+  "project": {
+    "name": "",
+    "type": "",
+    "backend_dir": "backend",
+    "frontend_dir": "frontend"
+  },
+  "plane": {
+    "workspace_slug": "",
+    "project_id": "",
+    "backlog_state_id": "",
+    "api_url": "https://api.plane.so/api/v1"
+  },
+  "claude_secure_path": "",
+  "coverage": {
+    "targets": { "overall": 80, "critical": 90 }
+  },
+  "ci": {
+    "use_npm_ci": true,
+    "node_version": "20",
+    "python_version": "3.12"
+  },
+  "qa": {
+    "quality_gates": {
+      "tests_must_pass": true,
+      "min_coverage": 80,
+      "max_p0_bugs": 0,
+      "max_p1_bugs": 2
+    },
+    "tracking_csv": ".claude/PRPs/qa/test-results.csv",
+    "bug_dir": ".claude/PRPs/qa/bugs/",
+    "report_dir": ".claude/PRPs/qa/reports/"
+  }
+}

@@ -1,6 +1,73 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/status_line.py",
+    "padding": 0
+  },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/session_context.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type SessionStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/secret_guard.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/branch_guard.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/branch_naming.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/commit_scope.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/prepush_checklist.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/scripts/branch_guard.py",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "matcher": "",
         "hooks": [
@@ -8,6 +75,11 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type PreToolUse",
+            "timeout": 5
           }
         ]
       }
@@ -20,6 +92,11 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type PostToolUse",
+            "timeout": 5
           }
         ]
       }
@@ -32,6 +109,11 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type Stop --add-chat",
+            "timeout": 5
           }
         ]
       }
@@ -44,18 +126,11 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
             "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
+          },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
-            "timeout": 30
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type Notification",
+            "timeout": 5
           }
         ]
       }
@@ -68,6 +143,98 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hook_handler.py",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type SubagentStop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auto_allow_readonly.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type PermissionRequest",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/backup_transcript.py",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type PreCompact",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/log_failures.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type PostToolUseFailure",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type UserPromptSubmit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type SubagentStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/observability/send_event.py --source-app prp-framework --event-type SessionEnd",
+            "timeout": 5
           }
         ]
       }

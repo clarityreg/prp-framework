@@ -1,6 +1,40 @@
+# OS files
 .DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.coverage
+.coverage.*
+coverage.json
+htmlcov/
+
+# Archives
 *.tar.gz
+
+# PRP secrets (API keys — never commit)
+.claude/prp-secrets.env
+
+# PRP runtime outputs
+.claude/hooks/*.jsonl
+.claude/hooks/generated/*
+!.claude/hooks/generated/.gitkeep
+.claude/PRPs/coverage/
+.claude/PRPs/branches/
+.claude/PRPs/doctor/
+.claude/PRPs/transcript-analysis/
+.claude/PRPs/qa/
+.claude/transcripts/
+*.jsonl
 security-reports/
 e2e-screenshots/
 e2e-test-report.md
-.secrets.baseline
+
+# Observability
+apps/server/events.db*
+apps/server/node_modules/
+apps/client/node_modules/
+apps/client/dist/
+.claude/hooks/observability/logs/
