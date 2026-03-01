@@ -18,7 +18,8 @@ A comprehensive hooks system for Claude Code that provides audio feedback, file 
 ### Python Dependencies
 
 ```bash
-pip install python-decouple
+uv pip install python-decouple   # preferred
+# or: pip install python-decouple
 ```
 
 ## Quick Install

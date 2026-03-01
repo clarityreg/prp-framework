@@ -48,7 +48,11 @@ if command -v pre-commit &> /dev/null; then
     pre-commit install
     echo "Pre-commit hooks installed."
 else
-    echo "Warning: pre-commit not found. Install with: pip install pre-commit"
+    if command -v uv &> /dev/null; then
+        echo "Warning: pre-commit not found. Install with: uv pip install pre-commit"
+    else
+        echo "Warning: pre-commit not found. Install with: pip install pre-commit"
+    fi
     echo "  Then run: pre-commit install"
 fi
 

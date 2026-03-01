@@ -333,9 +333,15 @@ fi
 if [[ ${SELECTED[3]} -eq 1 ]]; then
     header "Installing skills"
     mkdir -p "$TARGET_DIR/.claude/skills"
+    # Skills that only apply to the PRP framework repo itself — never install into target projects
+    local skip_skills="prp-sync-check"
     for skill_dir in "$PRP_SOURCE/.claude/skills"/*/; do
         [[ -d "$skill_dir" ]] || continue
         skill_name=$(basename "$skill_dir")
+        if [[ "$skip_skills" == *"$skill_name"* ]]; then
+            info "Skipping $skill_name (PRP framework repo only)"
+            continue
+        fi
         copy_dir "$skill_dir" "$TARGET_DIR/.claude/skills/$skill_name"
     done
     local_count=$(find "$TARGET_DIR/.claude/skills" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
@@ -493,6 +499,80 @@ RALPH_EOF
     fi
 fi
 
+# ─── Handle .gitignore ───────────────────────────────────────────────────────
+header "Handling .gitignore"
+
+PRP_GI_START="# <!-- PRP-GITIGNORE-START -->"
+PRP_GI_END="# <!-- PRP-GITIGNORE-END -->"
+
+PRP_GITIGNORE_CONTENT=$(cat <<'GIEOF'
+# PRP Framework — runtime outputs (do not commit)
+__pycache__/
+*.pyc
+*.pyo
+.coverage
+.coverage.*
+coverage.json
+htmlcov/
+.claude/hooks/*.jsonl
+.claude/hooks/generated/*
+!.claude/hooks/generated/.gitkeep
+.claude/PRPs/coverage/
+.claude/PRPs/branches/
+.claude/PRPs/doctor/
+.claude/PRPs/qa/
+.claude/transcripts/
+*.jsonl
+security-reports/
+e2e-screenshots/
+e2e-test-report.md
+.secrets.baseline
+apps/server/events.db*
+apps/server/node_modules/
+apps/client/node_modules/
+apps/client/dist/
+.claude/hooks/observability/logs/
+GIEOF
+)
+
+if [[ -f "$TARGET_DIR/.gitignore" ]]; then
+    if grep -q "PRP-GITIGNORE-START" "$TARGET_DIR/.gitignore"; then
+        # Replace existing PRP section
+        TMPFILE=$(mktemp)
+        awk '
+            /PRP-GITIGNORE-START/ { skip=1; next }
+            /PRP-GITIGNORE-END/   { skip=0; next }
+            !skip                 { print }
+        ' "$TARGET_DIR/.gitignore" > "$TMPFILE"
+        {
+            cat "$TMPFILE"
+            echo ""
+            echo "$PRP_GI_START"
+            echo "$PRP_GITIGNORE_CONTENT"
+            echo "$PRP_GI_END"
+        } > "$TARGET_DIR/.gitignore"
+        rm "$TMPFILE"
+        ok "Updated PRP section in .gitignore"
+    else
+        # Append PRP section
+        {
+            echo ""
+            echo "$PRP_GI_START"
+            echo "$PRP_GITIGNORE_CONTENT"
+            echo "$PRP_GI_END"
+        } >> "$TARGET_DIR/.gitignore"
+        ok "Appended PRP patterns to .gitignore"
+    fi
+else
+    # Create new .gitignore
+    {
+        echo "$PRP_GI_START"
+        echo "$PRP_GITIGNORE_CONTENT"
+        echo "$PRP_GI_END"
+    } > "$TARGET_DIR/.gitignore"
+    ok "Created .gitignore with PRP patterns"
+fi
+
 # ─── Handle CLAUDE.md ────────────────────────────────────────────────────────
 header "Handling CLAUDE.md"
 
@@ -566,7 +646,11 @@ if [[ ${SELECTED[6]} -eq 1 ]] && command -v pre-commit &>/dev/null; then
             || warn "pre-commit install failed"
     fi
 elif [[ ${SELECTED[6]} -eq 1 ]]; then
-    warn "pre-commit not found — install with: pip install pre-commit"
+    if command -v uv &>/dev/null; then
+        warn "pre-commit not found — install with: uv pip install pre-commit"
+    else
+        warn "pre-commit not found — install with: pip install pre-commit"
+    fi
     WARNINGS+=("pre-commit not installed")
 fi
 

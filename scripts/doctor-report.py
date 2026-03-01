@@ -13,6 +13,7 @@ Usage:
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import webbrowser
@@ -121,16 +122,18 @@ def check_environment(settings: dict) -> list[dict]:
                            "detail": pc_ver + " (hooks not installed)",
                            "fix": "Run: pre-commit install"})
     else:
+        pip_cmd = "uv pip install" if shutil.which("uv") else "pip install"
         checks.append({"name": "pre-commit", "status": "SKIP", "detail": "Not installed (optional)",
-                        "fix": "pip install pre-commit"})
+                        "fix": f"{pip_cmd} pre-commit"})
 
     # ruff
     ruff_ver = run(["ruff", "--version"])
     if ruff_ver:
         checks.append({"name": "ruff", "status": "PASS", "detail": ruff_ver, "fix": ""})
     else:
+        pip_cmd = "uv pip install" if shutil.which("uv") else "pip install"
         checks.append({"name": "ruff", "status": "SKIP", "detail": "Not installed (optional)",
-                        "fix": "pip install ruff"})
+                        "fix": f"{pip_cmd} ruff"})
 
     # trivy
     trivy_ver = run(["trivy", "--version"])
