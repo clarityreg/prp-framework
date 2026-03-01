@@ -149,10 +149,10 @@ Press `c` from the browser to open the settings view, which lets you read and wr
 
 ### Plane API key
 
-The Plane API key is **never** stored in `prp-settings.json`. It is read at runtime from a `.env` file in the project root:
+The Plane API key is **never** stored in `prp-settings.json`. It is read at runtime from `.claude/prp-secrets.env`:
 
 ```bash
-# .env
+# .claude/prp-secrets.env
 PLANE_API_KEY=your_key_here
 ```
 
@@ -231,7 +231,7 @@ require("prp-browser").setup({
 
 ### Plane API: "Connection failed" in settings view
 
-1. Ensure `.env` exists in the project root with `PLANE_API_KEY=your_key`
+1. Ensure `.claude/prp-secrets.env` exists with `PLANE_API_KEY=your_key`
 2. Set `plane.workspace_slug` first (press `Enter` on the field to edit)
 3. Press `r` to refresh the connection status
 4. Check the API URL matches your Plane instance (default: `https://api.plane.so/api/v1`)

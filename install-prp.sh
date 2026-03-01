@@ -513,6 +513,9 @@ PRP_GI_START="# <!-- PRP-GITIGNORE-START -->"
 PRP_GI_END="# <!-- PRP-GITIGNORE-END -->"
 
 PRP_GITIGNORE_CONTENT=$(cat <<'GIEOF'
+# PRP secrets (API keys — never commit)
+.claude/prp-secrets.env
+
 # PRP Framework — runtime outputs (do not commit)
 __pycache__/
 *.pyc

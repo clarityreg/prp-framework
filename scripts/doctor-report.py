@@ -394,12 +394,21 @@ def check_plane(settings: dict) -> list[dict]:
 
     checks = []
     api_key = os.environ.get("PLANE_API_KEY", "")
+    if not api_key:
+        # Fall back to .claude/prp-secrets.env
+        secrets_path = Path(".claude/prp-secrets.env")
+        if secrets_path.exists():
+            for line in secrets_path.read_text().splitlines():
+                line = line.strip()
+                if line.startswith("PLANE_API_KEY="):
+                    api_key = line.split("=", 1)[1].strip().strip("\"'")
+                    break
     api_url = plane.get("api_url", "https://api.plane.so/api/v1")
 
     if not api_key:
         checks.append({"name": "Plane API key", "status": "FAIL",
                        "detail": "PLANE_API_KEY not set",
-                       "fix": "Export PLANE_API_KEY in your environment"})
+                       "fix": "Add PLANE_API_KEY to .claude/prp-secrets.env or export in shell"})
         return checks
 
     # API reachable

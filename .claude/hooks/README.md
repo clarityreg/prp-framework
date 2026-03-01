@@ -95,13 +95,13 @@ The hooks are configured in `.claude/settings.json`:
 
 ### Environment Variables
 
-For structure change webhooks, add to `.env`:
+For structure change webhooks, add to `.claude/prp-secrets.env`:
 
 ```bash
 VISUALIZER_WEBHOOK=http://your-webhook-url/api/hooks/claude-code
 ```
 
-For Plane issue creation (file size violations), add:
+For Plane issue creation (file size violations), add to `.claude/prp-secrets.env`:
 
 ```bash
 PLANE_API_KEY=your-api-key

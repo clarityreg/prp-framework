@@ -110,7 +110,7 @@ Assess repository state. Run in a **single Bash call**:
 
 Only run if `.claude/prp-settings.json` has `plane.workspace_slug` and `plane.project_id` set.
 
-1. **Plane API reachable** — Use `PLANE_API_KEY` from env:
+1. **Plane API reachable** — Use `PLANE_API_KEY` from env or `.claude/prp-secrets.env`:
    ```bash
    curl -s -o /dev/null -w "%{http_code}" \
      -H "X-API-Key: $PLANE_API_KEY" \

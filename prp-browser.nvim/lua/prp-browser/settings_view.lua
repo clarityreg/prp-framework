@@ -408,9 +408,9 @@ function M.pick_plane_project(callback)
   end
 
   local root    = config.options.root_path or config.detect_root()
-  local api_key = M._read_env_key(root .. "/.env", "PLANE_API_KEY")
+  local api_key = M._read_env_key(root .. "/.claude/prp-secrets.env", "PLANE_API_KEY")
   if not api_key or api_key == "" then
-    vim.notify("PLANE_API_KEY not found in .env", vim.log.levels.WARN)
+    vim.notify("PLANE_API_KEY not found in .claude/prp-secrets.env", vim.log.levels.WARN)
     return
   end
 
@@ -451,9 +451,9 @@ function M.pick_plane_state(callback)
   end
 
   local root    = config.options.root_path or config.detect_root()
-  local api_key = M._read_env_key(root .. "/.env", "PLANE_API_KEY")
+  local api_key = M._read_env_key(root .. "/.claude/prp-secrets.env", "PLANE_API_KEY")
   if not api_key or api_key == "" then
-    vim.notify("PLANE_API_KEY not found in .env", vim.log.levels.WARN)
+    vim.notify("PLANE_API_KEY not found in .claude/prp-secrets.env", vim.log.levels.WARN)
     return
   end
 
@@ -494,10 +494,10 @@ function M.check_plane_connection(callback)
   end
 
   local root    = config.options.root_path or config.detect_root()
-  local api_key = M._read_env_key(root .. "/.env", "PLANE_API_KEY")
+  local api_key = M._read_env_key(root .. "/.claude/prp-secrets.env", "PLANE_API_KEY")
   if not api_key or api_key == "" then
     plane_status = "error"
-    if callback then callback(false, "PLANE_API_KEY not in .env") end
+    if callback then callback(false, "PLANE_API_KEY not in .claude/prp-secrets.env") end
     return
   end
 

@@ -83,12 +83,42 @@ def load_settings(project_root: Optional[Path] = None) -> Dict[str, Any]:
     return _deep_merge(DEFAULTS, user_settings)
 
 
+def _read_env_file(env_path: Path, key: str) -> Optional[str]:
+    """Read a key from an env file without external dependencies.
+
+    Supports ``KEY=value``, ``KEY="value"``, and ``KEY='value'`` formats.
+    Lines starting with ``#`` are ignored.
+    """
+    if not env_path.exists():
+        return None
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            k = k.strip()
+            v = v.strip()
+            if k == key:
+                # Strip surrounding quotes
+                if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
+                    v = v[1:-1]
+                return v
+    except OSError:
+        pass
+    return None
+
+
 def get_plane_config(settings: Dict[str, Any]) -> Optional[Dict[str, str]]:
     """Extract Plane API config from settings + environment.
 
-    The API key is read from the `.env` file (via ``python-decouple`` if
-    available) or the ``PLANE_API_KEY`` environment variable — never from
-    the settings JSON.
+    The API key is resolved in order:
+    1. ``PLANE_API_KEY`` environment variable
+    2. ``.claude/prp-secrets.env`` file (PRP-specific secrets)
+
+    The key is never stored in the settings JSON.
 
     Returns *None* when required fields are missing.
     """
@@ -100,20 +130,13 @@ def get_plane_config(settings: Dict[str, Any]) -> Optional[Dict[str, str]]:
     if not workspace_slug or not project_id:
         return None
 
-    # Try environment variable first
+    # 1. Environment variable (highest priority)
     api_key = os.environ.get("PLANE_API_KEY")
 
-    # Fall back to .env via python-decouple
+    # 2. PRP-specific secrets file
     if not api_key:
-        try:
-            from decouple import Config, RepositoryEnv
-
-            env_path = get_project_root() / ".env"
-            if env_path.exists():
-                cfg = Config(repository=RepositoryEnv(str(env_path)))
-                api_key = cfg("PLANE_API_KEY", default=None)
-        except ImportError:
-            pass
+        root = get_project_root()
+        api_key = _read_env_file(root / ".claude" / "prp-secrets.env", "PLANE_API_KEY")
 
     if not api_key:
         return None

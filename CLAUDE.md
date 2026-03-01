@@ -67,7 +67,7 @@ The framework uses `.claude/prp-settings.json` as a shared configuration file re
 
 - **Python hooks** use `.claude/hooks/prp_settings.py` (`load_settings()`, `get_plane_config()`)
 - **Lua TUI** uses `config.load_prp_settings()` and `config.save_prp_settings()`
-- **Plane API key** is always read from `.env` or `PLANE_API_KEY` env var — never stored in settings JSON
+- **Plane API key** is always read from `.claude/prp-secrets.env` or `PLANE_API_KEY` env var — never stored in settings JSON
 - **Template file**: `.claude/prp-settings.template.json` is copied on `setup-prp.sh` if no settings exist
 
 ## Archon MCP Integration
