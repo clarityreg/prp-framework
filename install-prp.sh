@@ -279,7 +279,9 @@ mkdir -p "$TARGET_DIR/.claude/PRPs/reviews"
 mkdir -p "$TARGET_DIR/.claude/PRPs/audit"
 mkdir -p "$TARGET_DIR/.claude/PRPs/coverage"
 mkdir -p "$TARGET_DIR/.claude/PRPs/branches"
+mkdir -p "$TARGET_DIR/.claude/PRPs/transcript-analysis"
 mkdir -p "$TARGET_DIR/.claude/hooks/sounds/voice"
+mkdir -p "$TARGET_DIR/.claude/docs"
 ok "Directory structure created"
 
 # ─── Install each selected component ────────────────────────────────────────
@@ -290,6 +292,11 @@ if [[ ${SELECTED[0]} -eq 1 ]]; then
     copy_dir "$PRP_SOURCE/.claude/commands/prp-core" "$TARGET_DIR/.claude/commands/prp-core"
     local_count=$(find "$TARGET_DIR/.claude/commands/prp-core" -name "*.md" | wc -l | tr -d ' ')
     ok "Installed $local_count command files"
+    # Copy reference docs if they exist in PRP source
+    if [[ -d "$PRP_SOURCE/.claude/docs" ]] && ls "$PRP_SOURCE/.claude/docs/"*.md &>/dev/null; then
+        copy_dir "$PRP_SOURCE/.claude/docs" "$TARGET_DIR/.claude/docs"
+        ok "Installed PRP reference docs (.claude/docs/)"
+    fi
     INSTALLED+=("Core commands ($local_count files)")
 fi
 
@@ -520,6 +527,7 @@ htmlcov/
 .claude/PRPs/coverage/
 .claude/PRPs/branches/
 .claude/PRPs/doctor/
+.claude/PRPs/transcript-analysis/
 .claude/PRPs/qa/
 .claude/transcripts/
 *.jsonl

@@ -21,6 +21,7 @@ htmlcov/
 .claude/PRPs/coverage/
 .claude/PRPs/branches/
 .claude/PRPs/doctor/
+.claude/PRPs/transcript-analysis/
 .claude/PRPs/qa/
 .claude/transcripts/
 *.jsonl

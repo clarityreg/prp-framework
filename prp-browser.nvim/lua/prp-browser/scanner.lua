@@ -58,7 +58,7 @@ M.categories = {
     icon = "$",
     dir = "scripts",
     pattern = { "*.sh", "*.py", "*.html" },
-    description = "Pre-commit + observability scripts",
+    description = "Pre-commit, transcript analyser, reports hub scripts",
   },
   {
     name = "Ralph",
@@ -86,7 +86,7 @@ M.categories = {
     icon = "P",
     dir = ".claude/PRPs",
     pattern = { "**/*.md", "**/*.html" },
-    description = "Artifact storage (PRDs, plans, issues, reviews)",
+    description = "Artifact storage (PRDs, plans, issues, reviews, transcript analysis)",
   },
   {
     name = "Observability Apps",

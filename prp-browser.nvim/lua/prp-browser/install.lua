@@ -8,7 +8,7 @@ local M = {}
 
 -- ── Component definitions (mirrors install-prp.sh) ──────────────────────────
 local COMPONENTS = {
-  { id = 1,  label = "Core commands",          desc = ".claude/commands/prp-core/ (26 command files)",                       default = true  },
+  { id = 1,  label = "Core commands",          desc = ".claude/commands/prp-core/ (29 command files)",                       default = true  },
   { id = 2,  label = "Hook scripts",           desc = ".claude/hooks/ (auto-format, logging, observability forwarding)",     default = true  },
   { id = 3,  label = "Git guard scripts",      desc = ".claude/scripts/ (branch guard, naming, commit scope, pre-push)",     default = true  },
   { id = 4,  label = "Skills",                 desc = ".claude/skills/ (test-nudge, decision-capture, security, context)",   default = true  },

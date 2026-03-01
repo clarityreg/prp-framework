@@ -30,6 +30,8 @@ All commands use the `/prp-*` namespace:
 | `/prp-coverage` | Run tests and generate coverage reports | None |
 | `/prp-branches` | Interactive branch/PR visualization | None |
 | `/prp-hookify` | Convert deterministic CLAUDE.md rules into enforced hooks | None |
+| `/prp-claudemd` | Audit and optimize CLAUDE.md — move reference to docs/, prune unused | None |
+| `/prp-transcript-audit` | Analyse transcripts for failure signals | Creates Plane review task |
 | `/e2e-test` | Full E2E testing with agent-browser | Creates tasks per journey |
 | `/agent-browser` | Browser automation reference (agent-browser CLI) | None |
 
@@ -155,6 +157,7 @@ When Archon is available, the Ralph loop:
 │   ├── prp-coverage.md      # Coverage report generation
 │   ├── prp-branches.md      # Branch/PR visualization
 │   ├── prp-hookify.md       # Convert CLAUDE.md rules to hooks
+│   ├── prp-transcript-audit.md # Transcript failure-signal analysis
 │   ├── e2e-test.md          # E2E testing with agent-browser
 │   └── agent-browser.md     # Browser automation CLI reference
 ├── skills/                  # Auto-triggered skills (context-aware)
@@ -195,7 +198,8 @@ When Archon is available, the Ralph loop:
 │   ├── issues/             # Issue investigations
 │   ├── reviews/            # PR reviews
 │   ├── coverage/           # Coverage reports (gitignored)
-│   └── branches/           # Branch visualizations (gitignored)
+│   ├── branches/           # Branch visualizations (gitignored)
+│   └── transcript-analysis/ # Transcript analysis reports (gitignored)
 └── settings.json           # Hook configuration
 
 apps/                        # Observability dashboard
@@ -208,6 +212,10 @@ scripts/                     # Pre-commit supporting scripts
 ├── trivy-precommit.sh      # Trivy security scan + reporting
 ├── coverage-report.sh      # Test coverage report generator
 ├── branch-viz.py           # Branch/PR visualization HTML
+├── transcript-analyser.py  # Transcript failure-signal mining
+├── transcript-analyser-template.html # Analyser report template
+├── reports-hub.py          # Unified reports index page
+├── reports-hub-template.html # Reports hub template
 ├── start-observability.sh  # Start dashboard server + client
 └── stop-observability.sh   # Stop dashboard processes
 

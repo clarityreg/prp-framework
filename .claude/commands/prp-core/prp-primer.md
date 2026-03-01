@@ -19,6 +19,7 @@ Start by reading key project files:
 2. README.md - Project overview and setup
 3. CONTRIBUTING.md (if exists) - Contribution guidelines
 4. docs/ folder (if exists) - Additional documentation
+5. .claude/docs/ folder (if exists) - PRP reference documentation
 ```
 
 ### 1.2 Check for PRP Artifacts
