@@ -10,7 +10,7 @@ local M = {}
 local COMPONENTS = {
   { id = 1,  label = "Core commands",          desc = ".claude/commands/prp-core/ (29 command files)",                       default = true  },
   { id = 2,  label = "Hook scripts",           desc = ".claude/hooks/ (auto-format, logging, observability forwarding)",     default = true  },
-  { id = 3,  label = "Git guard scripts",      desc = ".claude/scripts/ (branch guard, naming, commit scope, pre-push)",     default = true  },
+  { id = 3,  label = "Git guard scripts",      desc = ".claude/scripts/ (secret guard, branch guard, naming, commit scope, pre-push)", default = true  },
   { id = 4,  label = "Skills",                 desc = ".claude/skills/ (test-nudge, decision-capture, security, context)",   default = true  },
   { id = 5,  label = "Agents",                 desc = ".claude/agents/ (code-simplifier, backend-architect, etc.)",          default = true  },
   { id = 6,  label = "CI templates",           desc = ".claude/templates/ci/ (ci.yml, deploy.yml, electron-release.yml)",    default = true  },

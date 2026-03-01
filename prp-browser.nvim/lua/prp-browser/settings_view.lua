@@ -68,7 +68,7 @@ local SECTIONS = {
     key = "root",
     label = "Global",
     fields = {
-      { key = "claude_secure_path", label = "Secure Scanner", description = "Path to claude_secure.py scanner script", type = "string" },
+      { key = "claude_secure_path", label = "Secure Scanner", description = "Path to claude_secure.py scanner script (auto-detected if unset)", type = "string", auto_detect = "claude_secure" },
     },
   },
 }
@@ -166,6 +166,16 @@ function M.load_settings()
 
     for _, field in ipairs(section.fields) do
       local raw = M._get_value(section.key, field.key)
+
+      -- Auto-detect known paths when unset
+      if raw == nil and field.auto_detect == "claude_secure" then
+        local detected = config.detect_claude_secure and config.detect_claude_secure()
+        if detected then
+          raw = detected
+          M._set_value(section.key, field.key, detected)
+        end
+      end
+
       local display_val
       if raw == nil then
         display_val = ""

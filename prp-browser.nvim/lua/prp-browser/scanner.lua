@@ -51,7 +51,7 @@ M.categories = {
     icon = "$",
     dir = ".claude/scripts",
     pattern = "*.py",
-    description = "Git workflow scripts (branch guard, naming, etc.)",
+    description = "Git workflow scripts (secret guard, branch guard, naming, etc.)",
   },
   {
     name = "Scripts (root)",

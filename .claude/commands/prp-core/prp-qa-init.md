@@ -408,6 +408,7 @@ Baseline:
 Quality Gates: {X}/{Y} passing
 
 Report saved: .claude/PRPs/qa/reports/{date}-init.md
+HTML report: .claude/PRPs/qa/reports/qa-report.html
 
 {If there are remaining untested files}
 Note: {N} source files still need tests. Run `/prp-qa-init` again to continue.
@@ -415,6 +416,16 @@ Note: {N} source files still need tests. Run `/prp-qa-init` again to continue.
 {If there are failing tests}
 Warning: {N} tests are failing. Review the failures above and fix before proceeding.
 ```
+
+### 5.3 Generate HTML Dashboard
+
+After saving the markdown report, generate the HTML QA dashboard:
+
+```bash
+uv run scripts/qa-report.py --days 7
+```
+
+This produces `.claude/PRPs/qa/reports/qa-report.html` — a dark-themed interactive dashboard with quality gate status, metric cards, test results, coverage trends, and bug tracking.
 
 ---
 
@@ -425,4 +436,5 @@ The primary outputs are:
 2. **Test files** generated for untested source files
 3. **Baseline metrics** recorded in `test-results.csv`
 4. **Init report** saved to `.claude/PRPs/qa/reports/`
-5. **Conversational summary** presented to the user
+5. **HTML dashboard** generated at `.claude/PRPs/qa/reports/qa-report.html`
+6. **Conversational summary** presented to the user

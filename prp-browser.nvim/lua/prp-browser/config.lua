@@ -16,6 +16,45 @@ function M.setup(opts)
   if not M.options.root_path then
     M.options.root_path = M.detect_root()
   end
+  if not M.options.claude_secure_path then
+    M.options.claude_secure_path = M.detect_claude_secure()
+  end
+end
+
+--- Auto-detect claude_secure.py location.
+--- Priority: prp-settings.json > known paths > PATH lookup.
+---@return string|nil
+function M.detect_claude_secure()
+  local root = M.options.root_path or M.detect_root()
+
+  -- 1. Check prp-settings.json for explicit path
+  local settings = M.load_prp_settings()
+  if settings and settings.claude_secure_path then
+    local p = vim.fn.expand(settings.claude_secure_path)
+    if vim.fn.filereadable(p) == 1 then
+      return p
+    end
+  end
+
+  -- 2. Check known locations
+  local known = {
+    vim.fn.expand("~/Development/claude-secure/claude_secure.py"),
+    root .. "/scripts/claude_secure.py",
+    root .. "/.claude/scripts/claude_secure.py",
+  }
+  for _, p in ipairs(known) do
+    if vim.fn.filereadable(p) == 1 then
+      return p
+    end
+  end
+
+  -- 3. Check PATH via which
+  local which = vim.fn.systemlist("which claude_secure.py 2>/dev/null")[1]
+  if which and which ~= "" and vim.fn.filereadable(which) == 1 then
+    return which
+  end
+
+  return nil
 end
 
 function M.detect_root()

@@ -43,6 +43,11 @@ KNOWN_REPORTS: list[dict] = [
         "icon": "📈",
         "path": "htmlcov/index.html",
     },
+    {
+        "name": "QA Report",
+        "icon": "🧪",
+        "path": ".claude/PRPs/qa/reports/qa-report.html",
+    },
 ]
 
 QA_REPORT_DIR = ".claude/PRPs/qa/reports"

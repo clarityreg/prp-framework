@@ -354,3 +354,19 @@ Report: .claude/PRPs/qa/reports/{filename}
 If `.claude/PRPs/qa/` does not exist or has no data, suggest running `/prp-qa-init` first.
 
 The primary output is the **report file saved to disk**. The summary is conversational.
+
+---
+
+## Phase 5: HTML
+
+After saving the markdown report, generate the HTML QA dashboard:
+
+```bash
+uv run scripts/qa-report.py --days {same days value used above}
+```
+
+This produces `.claude/PRPs/qa/reports/qa-report.html` — an interactive dark-themed dashboard with quality gate status, metric cards, test result history, coverage trend, and bug tracker visualization. The report is also discoverable via the PRP reports hub (`uv run scripts/reports-hub.py`).
+
+```
+HTML dashboard: .claude/PRPs/qa/reports/qa-report.html
+```

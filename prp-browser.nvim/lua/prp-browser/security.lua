@@ -290,7 +290,11 @@ function M.run_scan(root, callback)
     return
   end
 
-  local cs_path = config.options.claude_secure_path or "claude_secure.py"
+  local cs_path = config.options.claude_secure_path
+  if not cs_path then
+    callback(false, "claude_secure.py not found. Set claude_secure_path in prp-settings.json or plugin setup().")
+    return
+  end
   local cmd = { "uv", "run", "python", cs_path, root, "--json" }
 
   local stdout_chunks = {}
