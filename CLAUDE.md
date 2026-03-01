@@ -29,6 +29,7 @@ All commands use the `/prp-*` namespace:
 | `/prp-ci-init` | Initialize CI/CD workflows from templates | None |
 | `/prp-coverage` | Run tests and generate coverage reports | None |
 | `/prp-branches` | Interactive branch/PR visualization | None |
+| `/prp-hookify` | Convert deterministic CLAUDE.md rules into enforced hooks | None |
 | `/e2e-test` | Full E2E testing with agent-browser | Creates tasks per journey |
 | `/agent-browser` | Browser automation reference (agent-browser CLI) | None |
 
@@ -153,6 +154,7 @@ When Archon is available, the Ralph loop:
 │   ├── prp-ci-init.md       # Initialize CI/CD from templates
 │   ├── prp-coverage.md      # Coverage report generation
 │   ├── prp-branches.md      # Branch/PR visualization
+│   ├── prp-hookify.md       # Convert CLAUDE.md rules to hooks
 │   ├── e2e-test.md          # E2E testing with agent-browser
 │   └── agent-browser.md     # Browser automation CLI reference
 ├── skills/                  # Auto-triggered skills (context-aware)
@@ -175,6 +177,7 @@ When Archon is available, the Ralph loop:
 │   ├── log_failures.py      # PostToolUseFailure: logs failures + plays error sound
 │   ├── status_line.py       # Status line: model, context %, branch, dirty, time
 │   ├── prp_settings.py      # Shared settings loader (Python)
+│   ├── generated/           # Auto-generated hooks from /prp-hookify
 │   └── observability/       # Dashboard event forwarding
 │       ├── __init__.py
 │       ├── send_event.py    # HTTP POST to observability server
@@ -314,6 +317,7 @@ Skills are context-aware behaviors that Claude activates automatically — no `/
 | `capturing-architecture-decisions` | Knowledge | New endpoint, migration, dependency, or service added | Offers to write ADR to Obsidian |
 | `detecting-security-antipatterns` | Guardrail | Code with hardcoded secrets, SQL injection, eval, etc. | Flags with severity + fix |
 | `enriching-session-context` | Context | User starts working on a new code area | Surfaces related Obsidian notes, PRPs, coverage, Plane tasks |
+| `checking-framework-sync` | Guardrail | PRP framework source file modified (command, hook, script, settings) | Checks if Obsidian, nvim plugin, install script, CLAUDE.md need updating; asks user to confirm |
 
 **Design principles:**
 - **Advisory only** — skills never block or auto-execute. They suggest; the user decides.

@@ -45,7 +45,7 @@ Detailed audit comparing Obsidian notes against actual codebase at `/Users/chidi
 **Status:** ✓ Complete and accurate
 
 **Verification:**
-- All 21 commands listed and present in `.claude/commands/prp-core/`:
+- All 26 commands listed and present in `.claude/commands/prp-core/`:
   1. prp-prd.md ✓
   2. prp-plan.md ✓
   3. prp-implement.md ✓
@@ -65,14 +65,19 @@ Detailed audit comparing Obsidian notes against actual codebase at `/Users/chidi
   17. prp-ci-init.md ✓
   18. prp-coverage.md ✓
   19. prp-branches.md ✓
-  20. e2e-test.md ✓
-  21. agent-browser.md ✓
+  20. prp-hookify.md ✓ (added 2026-03-01)
+  21. prp-qa-init.md ✓
+  22. prp-qa-gate.md ✓
+  23. prp-qa-report.md ✓
+  24. prp-bug.md ✓
+  25. e2e-test.md ✓
+  26. agent-browser.md ✓
 
 - Command descriptions align with file content
 - Auto-triggered skills section accurate
 - Archon integration details correct
 
-**Gaps:** None
+**Gaps:** None — command count updated from 21 → 26 (added prp-hookify, prp-qa-init, prp-qa-gate, prp-qa-report, prp-bug)
 
 ---
 
@@ -343,7 +348,14 @@ Three hooks exist but aren't explicitly documented:
 **Current status:** Only briefly mentioned or not at all.
 **Recommendation:** Add documentation of these three to "PRP Hooks and Scripts.md"
 
-### 3. Pre-commit Supporting Scripts
+### 3. Generated Hooks Directory
+
+`.claude/hooks/generated/` is a new convention introduced by `/prp-hookify` (added 2026-03-01). This directory holds auto-generated Python hook scripts that enforce deterministic CLAUDE.md rules. Not yet documented in any Obsidian note.
+
+**Current status:** Directory exists with `.gitkeep`. Hooks are generated at runtime by `/prp-hookify`.
+**Recommendation:** Document in "PRP Hooks and Scripts.md" under a new "Generated Hooks" subsection explaining the hookify workflow and `hookify_{category}_{slug}.py` naming convention.
+
+### 4. Pre-commit Supporting Scripts
 
 4 scripts are not documented in "PRP Hooks and Scripts.md":
 - check-file-size.sh

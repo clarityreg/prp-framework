@@ -9,28 +9,29 @@ Run a comprehensive diagnostic of the project and report results as a checklist 
 
 ---
 
+## CRITICAL: Execution Rules
+
+**Every check MUST be independent.** A failure in one check must NEVER affect another.
+
+1. **Never chain checks with `&&`** — use `;` or run them as separate statements so a non-zero exit doesn't kill subsequent checks
+2. **Never run check groups as parallel sibling Bash calls** — run ALL checks in a SINGLE Bash call per group, using `;` to separate commands, so one exit code 127 (command not found) doesn't cascade-cancel the other groups
+3. **Always append `2>/dev/null || true`** to commands that might not exist (pre-commit, trivy, ruff) to guarantee exit 0
+4. **Collect results, then report** — don't bail out mid-check
+
+---
+
 ## Check Group 1: ENVIRONMENT
 
-Verify required tools are installed and configured.
+Verify required tools are installed and configured. Run ALL of these in a **single Bash call**, separated by `;` — never `&&`:
 
 ```bash
-# Python
-python3 --version 2>/dev/null || python --version 2>/dev/null
-
-# Node
-node --version 2>/dev/null
-
-# gh CLI
-gh auth status 2>/dev/null
-
-# pre-commit
-pre-commit --version 2>/dev/null
-# Check if hooks are installed
-[ -f .git/hooks/pre-commit ] && echo "hooks installed"
-
-# Optional tools
-ruff --version 2>/dev/null
-trivy --version 2>/dev/null
+echo "PYTHON: $(python3 --version 2>&1 || echo 'NOT FOUND')" ;
+echo "NODE: $(node --version 2>&1 || echo 'NOT FOUND')" ;
+echo "GH: $(gh auth status 2>&1 || echo 'NOT FOUND')" ;
+echo "PRECOMMIT: $(pre-commit --version 2>&1 || echo 'NOT FOUND')" ;
+echo "PRECOMMIT_HOOK: $([ -f .git/hooks/pre-commit ] && echo 'installed' || echo 'not installed')" ;
+echo "RUFF: $(ruff --version 2>&1 || echo 'NOT FOUND')" ;
+echo "TRIVY: $(trivy --version 2>&1 | head -1 || echo 'NOT FOUND')"
 ```
 
 Read `.claude/prp-settings.json` to get expected versions:
@@ -46,7 +47,7 @@ Report:
 
 ## Check Group 2: PROJECT STRUCTURE
 
-Verify essential files and directories exist.
+Verify essential files and directories exist. Run in a **single Bash call**:
 
 1. **`.env`** — If `.env.example` exists, check that `.env` also exists and contains all the same keys (values can differ). Report missing keys.
 2. **`.claude/prp-settings.json`** — Exists and has a non-empty `project.name`
@@ -59,11 +60,11 @@ Verify essential files and directories exist.
 
 ## Check Group 3: CODE HEALTH
 
-Assess code quality signals.
+Assess code quality signals. Run in a **single Bash call**:
 
 1. **Oversized Python files** — Find `.py` files over 500 lines:
    ```bash
-   find . -name "*.py" -not -path "*/node_modules/*" -not -path "*/.venv/*" -not -path "*/migrations/*" | while read f; do
+   find . -name "*.py" -not -path "*/node_modules/*" -not -path "*/.venv/*" -not -path "*/migrations/*" 2>/dev/null | while read f; do
      lines=$(wc -l < "$f")
      [ "$lines" -gt 500 ] && echo "WARN: $f ($lines lines)"
    done
@@ -72,7 +73,7 @@ Assess code quality signals.
 
 2. **TODO/FIXME count** — Non-blocking, just report:
    ```bash
-   grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.rs" --include="*.go" . | grep -v node_modules | grep -v .venv | wc -l
+   grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.rs" --include="*.go" . 2>/dev/null | grep -v node_modules | grep -v .venv | wc -l
    ```
    Report count. No pass/fail — purely informational.
 
@@ -80,7 +81,7 @@ Assess code quality signals.
 
 4. **Merge conflict markers** — Search tracked files for `<<<<<<<`, `=======`, `>>>>>>>`:
    ```bash
-   git grep -l "<<<<<<< \|======= \|>>>>>>> " -- ':!*.md' 2>/dev/null
+   git grep -l "<<<<<<< \|======= \|>>>>>>> " -- ':!*.md' 2>/dev/null || true
    ```
    PASS: none found. FAIL: list files with unresolved conflicts.
 
@@ -88,7 +89,7 @@ Assess code quality signals.
 
 ## Check Group 4: GIT HEALTH
 
-Assess repository state.
+Assess repository state. Run in a **single Bash call**:
 
 1. **Protected branch** — Check if current branch is `main` or `master`. WARN if so (you should be on a feature branch).
 2. **Uncommitted changes** — Run `git status --porcelain`. PASS if clean, WARN with count of modified/untracked files.
@@ -99,8 +100,7 @@ Assess repository state.
    PASS: none. WARN: list them with suggestion to delete.
 4. **Remote** — Verify remote is set and reachable:
    ```bash
-   git remote get-url origin 2>/dev/null
-   git ls-remote --exit-code origin HEAD 2>/dev/null
+   git remote get-url origin 2>/dev/null ; git ls-remote --exit-code origin HEAD 2>/dev/null || true
    ```
    PASS: remote set and reachable. FAIL: no remote or unreachable.
 
@@ -129,7 +129,7 @@ If Plane is not configured, SKIP this entire group.
 
 ## Check Group 6: PRP COMPONENTS
 
-Verify PRP framework components are installed in the project.
+Verify PRP framework components are installed in the project. Run in a **single Bash call**:
 
 Check for the presence of each component's files/directories:
 
@@ -152,7 +152,7 @@ Report:
 
 ## Check Group 7: QA INFRASTRUCTURE
 
-Verify QA tooling is set up.
+Verify QA tooling is set up. Run in a **single Bash call**:
 
 1. **QA directory** — `.claude/PRPs/qa/` exists. PASS if yes, WARN if not.
 2. **Test results CSV** — Check path from `qa.tracking_csv` in settings (default `.claude/PRPs/qa/test-results.csv`). PASS if exists.
@@ -163,7 +163,7 @@ Verify QA tooling is set up.
 
 ## Check Group 8: CI/CD CONFIGURED
 
-Verify CI/CD workflows are set up.
+Verify CI/CD workflows are set up. Run in a **single Bash call**:
 
 1. **CI workflow** — `.github/workflows/ci.yml` exists. PASS if yes, WARN if not.
 2. **Deploy workflow** — `.github/workflows/deploy.yml` exists. PASS if yes, SKIP if not (optional).
@@ -173,10 +173,10 @@ Verify CI/CD workflows are set up.
 
 ## Check Group 9: OBSERVABILITY
 
-Check if the observability dashboard is running.
+Check if the observability dashboard is installed and running. Run in a **single Bash call**:
 
-1. **Observability server** — `curl -s --connect-timeout 2 http://localhost:4000/health`. PASS if HTTP 200, WARN if not running.
-2. **Dashboard files** — `apps/server/` and `apps/client/` directories exist. PASS if yes, WARN if not.
+1. **Dashboard files** — `apps/server/` and `apps/client/` directories exist. PASS if yes, WARN if not.
+2. **Observability server** — Only check if dashboard files exist. `curl -s --connect-timeout 2 http://localhost:4000/health 2>/dev/null || true`. PASS if HTTP 200, WARN if not running.
 
 ---
 
