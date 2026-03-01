@@ -8,6 +8,7 @@ local settings_view = require("prp-browser.settings_view")
 local observability = require("prp-browser.observability")
 local ralph = require("prp-browser.ralph")
 local install = require("prp-browser.install")
+local doctor = require("prp-browser.doctor")
 
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
@@ -36,7 +37,7 @@ local flat_nodes = nil       -- flattened for display
 local scan_result = nil
 local current_filter = nil
 local cursor_line = 1
-local current_view = "browser" -- "browser", "security", "settings", "observability", "ralph", or "install"
+local current_view = "browser" -- "browser", "security", "settings", "observability", "ralph", "install", or "doctor"
 
 --- Open the PRP browser UI.
 function M.open()
@@ -174,6 +175,7 @@ function M.close()
     observability.reset()
     ralph.reset()
     install.reset()
+    doctor.reset()
   end
 end
 
@@ -196,6 +198,8 @@ function M._render_tree()
     M._render_ralph_list()
   elseif current_view == "install" then
     M._render_install_list()
+  elseif current_view == "doctor" then
+    M._render_doctor_list()
   else
     M._render_browser_tree()
   end
@@ -339,6 +343,11 @@ function M._render_status()
     return
   end
 
+  if current_view == "doctor" then
+    M._render_doctor_status()
+    return
+  end
+
   local total = 0
   if scan_result then
     for _, cat in ipairs(scan_result.categories) do
@@ -392,6 +401,8 @@ function M._update_preview()
     M._update_ralph_preview()
   elseif current_view == "install" then
     M._update_install_preview()
+  elseif current_view == "doctor" then
+    M._update_doctor_preview()
   else
     M._update_browser_preview()
   end
@@ -657,6 +668,8 @@ function M._setup_keymaps()
     M._setup_ralph_keymaps(map)
   elseif current_view == "install" then
     M._setup_install_keymaps(map)
+  elseif current_view == "doctor" then
+    M._setup_doctor_keymaps(map)
   else
     M._setup_browser_keymaps(map)
   end
@@ -801,6 +814,11 @@ function M._setup_browser_keymaps(map)
   map("I", function()
     M._switch_to_install()
   end)
+
+  -- Switch to doctor view
+  map("D", function()
+    M._switch_to_doctor()
+  end)
 end
 
 function M._setup_security_keymaps(map)
@@ -859,7 +877,7 @@ function M._setup_security_keymaps(map)
   end)
 
   -- Disable browser-specific keys in security view
-  for _, key in ipairs({ "l", "h", "e", "E", "y", "/", "c", "o", "I" }) do
+  for _, key in ipairs({ "l", "h", "e", "E", "y", "/", "c", "o", "I", "D" }) do
     map(key, function() end)
   end
 end
@@ -948,7 +966,7 @@ function M._setup_settings_keymaps(map)
   end)
 
   -- Disable keys that don't apply in settings view
-  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c", "o", "I" }) do
+  for _, key in ipairs({ "s", "l", "h", "e", "E", "y", "/", "S", "1", "2", "3", "4", "a", "c", "o", "I", "D" }) do
     map(key, function() end)
   end
 end
@@ -1051,7 +1069,7 @@ function M._setup_observability_keymaps(map)
   end)
 
   -- Disable keys that don't apply in observability view
-  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I", "D" }) do
     map(key, function() end)
   end
 end
@@ -1096,7 +1114,7 @@ function M._setup_ralph_keymaps(map)
   end)
 
   -- Disable keys that don't apply in ralph view
-  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I", "D" }) do
     map(key, function() end)
   end
 end
@@ -1193,7 +1211,185 @@ function M._setup_install_keymaps(map)
   end)
 
   -- Disable keys that don't apply in install view
-  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I" }) do
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "1", "2", "3", "4", "a", "o", "p", "t", "w", "R", "I", "D" }) do
+    map(key, function() end)
+  end
+end
+
+-- ---------------------------------------------------------------------------
+-- Doctor view
+-- ---------------------------------------------------------------------------
+
+function M._switch_to_doctor()
+  current_view = "doctor"
+
+  set_border_text(tree_popup, "top", " Doctor ", "center")
+  set_border_text(preview_popup, "top", " Check Detail ", "center")
+
+  -- If no report yet, trigger checks immediately
+  if not doctor.get_report() then
+    M._trigger_doctor_checks()
+  else
+    M._render_tree()
+    cursor_line = 1
+    pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+    M._update_preview()
+  end
+
+  M._setup_keymaps()
+end
+
+function M._render_doctor_list()
+  local width = config.options.tree_width - 2
+  local lines, highlights = doctor.render_list(width)
+
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
+  vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, lines)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
+
+  local ns = vim.api.nvim_create_namespace("prp_browser_tree")
+  vim.api.nvim_buf_clear_namespace(tree_popup.bufnr, ns, 0, -1)
+  for _, hl in ipairs(highlights) do
+    pcall(vim.api.nvim_buf_add_highlight, tree_popup.bufnr, ns, hl.group, hl.line - 1, hl.col_start or 0, hl.col_end or -1)
+  end
+
+  M._render_doctor_status()
+end
+
+function M._render_doctor_status()
+  if not tree_popup or not tree_popup.bufnr then return end
+  local status = "[r]rerun [o]html [1]fail [2]warn [3]pass [a]all [b]back [?]help"
+  if doctor.is_busy() then
+    status = "Running checks..."
+  end
+  set_border_text(tree_popup, "bottom", " " .. status .. " ", "center")
+end
+
+function M._update_doctor_preview()
+  local idx = doctor.display_index_from_cursor(cursor_line)
+  local check = doctor.get_entry_at(idx)
+
+  set_border_text(preview_popup, "top", " Check Detail ", "center")
+  doctor.render_preview(check, preview_popup.bufnr)
+end
+
+function M._trigger_doctor_checks()
+  local root = config.options.root_path
+  if not root then
+    vim.notify("No root_path configured", vim.log.levels.ERROR)
+    return
+  end
+
+  -- Show loading state
+  vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
+  vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, {
+    "",
+    "  Running health checks...",
+    "",
+    "  Scanning project at",
+    "  " .. root,
+  })
+  vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
+  M._render_doctor_status()
+
+  doctor.run_checks(root, function(success, err)
+    if not layout then return end
+
+    if success then
+      M._render_tree()
+      cursor_line = 1
+      pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+      M._update_preview()
+    else
+      vim.notify("Doctor checks failed: " .. (err or "unknown"), vim.log.levels.ERROR)
+      vim.api.nvim_set_option_value("modifiable", true, { buf = tree_popup.bufnr })
+      vim.api.nvim_buf_set_lines(tree_popup.bufnr, 0, -1, false, {
+        "",
+        "  Health checks failed",
+        "  " .. (err or ""),
+        "",
+        "  Press r to retry",
+      })
+      vim.api.nvim_set_option_value("modifiable", false, { buf = tree_popup.bufnr })
+    end
+    M._render_doctor_status()
+  end)
+end
+
+function M._setup_doctor_keymaps(map)
+  -- Back to browser
+  map("b", function()
+    M._switch_to_browser()
+  end)
+
+  map("<Esc>", function()
+    M._switch_to_browser()
+  end)
+
+  -- Re-run health checks
+  map("r", function()
+    doctor.reset()
+    M._trigger_doctor_checks()
+  end)
+
+  -- Open HTML report in browser
+  map("o", function()
+    local root = config.options.root_path
+    if not root then return end
+    local report_path = root .. "/.claude/PRPs/doctor/doctor-report.html"
+    if vim.fn.filereadable(report_path) == 1 then
+      if vim.fn.has("mac") == 1 then
+        vim.fn.system({ "open", report_path })
+      elseif vim.fn.has("unix") == 1 then
+        vim.fn.system({ "xdg-open", report_path })
+      end
+      vim.notify("Opening HTML report", vim.log.levels.INFO)
+    else
+      -- Generate the report first
+      vim.notify("Generating HTML report...", vim.log.levels.INFO)
+      vim.fn.jobstart({ "python3", root .. "/scripts/doctor-report.py" }, {
+        cwd = root,
+        on_exit = function(_, code)
+          vim.schedule(function()
+            if code == 0 then
+              vim.notify("HTML report generated and opened", vim.log.levels.INFO)
+            else
+              vim.notify("Failed to generate HTML report", vim.log.levels.ERROR)
+            end
+          end)
+        end,
+      })
+    end
+  end)
+
+  -- Status filters: 1=FAIL, 2=WARN, 3=PASS
+  local filter_map = { "FAIL", "WARN", "PASS" }
+  for i, status in ipairs(filter_map) do
+    map(tostring(i), function()
+      doctor.set_filter(status)
+      M._render_tree()
+      cursor_line = 1
+      pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+      M._update_preview()
+    end)
+  end
+
+  -- Show all (clear filter)
+  map("a", function()
+    doctor.clear_filter()
+    M._render_tree()
+    cursor_line = 1
+    pcall(vim.api.nvim_win_set_cursor, tree_popup.winid, { 1, 0 })
+    M._update_preview()
+  end)
+
+  -- Help
+  map("?", function()
+    actions.show_doctor_help(tree_popup.winid)
+  end)
+
+  -- Disable keys that don't apply in doctor view
+  for _, key in ipairs({ "s", "c", "l", "h", "e", "E", "y", "/", "S", "X", "d", "4", "p", "t", "w", "R", "I", "D" }) do
     map(key, function() end)
   end
 end

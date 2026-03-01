@@ -127,6 +127,59 @@ If Plane is not configured, SKIP this entire group.
 
 ---
 
+## Check Group 6: PRP COMPONENTS
+
+Verify PRP framework components are installed in the project.
+
+Check for the presence of each component's files/directories:
+
+1. **Core commands** — `.claude/commands/prp-core/` exists and has files
+2. **Hook scripts** — `.claude/hooks/` exists
+3. **Git guard scripts** — `.claude/scripts/` exists
+4. **Skills** — `.claude/skills/` exists
+5. **Agents** — `.claude/agents/` exists
+6. **CI templates** — `.claude/templates/ci/` exists
+7. **Pre-commit config** — `.pre-commit-config.yaml` exists
+8. **Settings wiring** — `.claude/settings.json` exists
+9. **Observability dashboard** — `apps/server/` exists
+10. **Ralph loop** — `ralph/` exists
+
+Report:
+- PASS: component directory/file exists (include file count for directories)
+- WARN: component not found (suggest running `install-prp.sh`)
+
+---
+
+## Check Group 7: QA INFRASTRUCTURE
+
+Verify QA tooling is set up.
+
+1. **QA directory** — `.claude/PRPs/qa/` exists. PASS if yes, WARN if not.
+2. **Test results CSV** — Check path from `qa.tracking_csv` in settings (default `.claude/PRPs/qa/test-results.csv`). PASS if exists.
+3. **Quality gates** — `qa.quality_gates` is configured in prp-settings.json. PASS if present with values.
+4. **QA gate script** — `scripts/qa-gate-check.sh` exists. PASS if yes, SKIP if not (optional).
+
+---
+
+## Check Group 8: CI/CD CONFIGURED
+
+Verify CI/CD workflows are set up.
+
+1. **CI workflow** — `.github/workflows/ci.yml` exists. PASS if yes, WARN if not.
+2. **Deploy workflow** — `.github/workflows/deploy.yml` exists. PASS if yes, SKIP if not (optional).
+3. **CI templates** — `.claude/templates/ci/` directory exists with template files. PASS if yes, WARN if not.
+
+---
+
+## Check Group 9: OBSERVABILITY
+
+Check if the observability dashboard is running.
+
+1. **Observability server** — `curl -s --connect-timeout 2 http://localhost:4000/health`. PASS if HTTP 200, WARN if not running.
+2. **Dashboard files** — `apps/server/` and `apps/client/` directories exist. PASS if yes, WARN if not.
+
+---
+
 ## Output Format
 
 Present results as a clean checklist:
@@ -179,3 +232,22 @@ Score: 14/16 checks pass, 2 warnings
 For every WARN or FAIL item, include a one-line actionable fix suggestion (prefixed with `-> Fix:`).
 
 End with a summary score: `X/Y checks pass, Z warnings, W failures`.
+
+---
+
+## Phase 6: HTML REPORT
+
+After displaying the console output above, generate a persistent HTML report:
+
+```bash
+python3 scripts/doctor-report.py
+```
+
+This runs the same checks programmatically and:
+1. Generates a styled HTML report at `.claude/PRPs/doctor/doctor-report.html`
+2. Opens it in the default browser
+
+Report the saved file path to the user:
+```
+HTML report saved: .claude/PRPs/doctor/doctor-report.html
+```
