@@ -43,7 +43,7 @@ M.categories = {
     name = "Templates",
     icon = "T",
     dir = ".claude/templates",
-    pattern = "**/*.md",
+    pattern = { "**/*.md", "**/*.template" },
     description = "QA and CI templates (bug reports, test cases, OWASP)",
   },
   {
@@ -57,7 +57,7 @@ M.categories = {
     name = "Scripts (root)",
     icon = "$",
     dir = "scripts",
-    pattern = { "*.sh", "*.py" },
+    pattern = { "*.sh", "*.py", "*.html" },
     description = "Pre-commit + observability scripts",
   },
   {
@@ -71,7 +71,7 @@ M.categories = {
     name = "Settings",
     icon = "%",
     dir = ".claude",
-    pattern = "settings*.json",
+    pattern = "*settings*.json",
     description = "Claude Code settings files",
   },
   {
@@ -85,14 +85,14 @@ M.categories = {
     name = "PRPs",
     icon = "P",
     dir = ".claude/PRPs",
-    pattern = "**/*.md",
+    pattern = { "**/*.md", "**/*.html" },
     description = "Artifact storage (PRDs, plans, issues, reviews)",
   },
   {
     name = "Observability Apps",
     icon = "O",
     dir = "apps",
-    pattern = { "server/package.json", "client/package.json", "server/src/*.ts", "client/src/*.ts", "client/src/*.vue" },
+    pattern = { "server/package.json", "client/package.json", "server/src/**/*.ts", "client/src/**/*.ts", "client/src/**/*.vue" },
     description = "Bun server + Vue dashboard for hook event visualization",
   },
   {
@@ -106,7 +106,7 @@ M.categories = {
     name = "Root Config",
     icon = ".",
     dir = ".",
-    pattern = { "CLAUDE.md", ".gitignore", ".coderabbit.yaml", "pyproject.toml" },
+    pattern = { "CLAUDE.md", ".gitignore" },
     description = "Project-level configuration files",
   },
 }

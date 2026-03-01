@@ -140,7 +140,7 @@ COMPONENTS=(
     "Git guard scripts (.claude/scripts/):1"
     "Skills (.claude/skills/):1"
     "Agents (.claude/agents/):1"
-    "CI templates (.claude/templates/ci/):1"
+    "Templates (.claude/templates/ — CI + QA):1"
     "Pre-commit config (.pre-commit-config.yaml + scripts/):1"
     "Settings & wiring (settings.json, prp-settings.json):1"
     "Observability dashboard (apps/server + apps/client):0"
@@ -250,6 +250,7 @@ copy_dir() {
         --exclude='*.jsonl' \
         --exclude='node_modules' \
         --exclude='.DS_Store' \
+        --exclude='worktrees' \
         "$src/" "$dst/"
 }
 
@@ -265,6 +266,11 @@ backup_if_exists() {
 
 # ─── Create directory structure ──────────────────────────────────────────────
 header "Creating directories"
+
+# Warn if worktrees exist — they are never touched
+if [[ -d "$TARGET_DIR/.claude/worktrees" ]]; then
+    info "Existing .claude/worktrees/ detected — will be preserved"
+fi
 
 mkdir -p "$TARGET_DIR/.claude/PRPs/prds"
 mkdir -p "$TARGET_DIR/.claude/PRPs/plans"
@@ -350,39 +356,64 @@ if [[ ${SELECTED[4]} -eq 1 ]]; then
     INSTALLED+=("Agents ($local_count files)")
 fi
 
-# 6. CI templates
+# 6. Templates (CI + QA)
 if [[ ${SELECTED[5]} -eq 1 ]]; then
-    header "Installing CI templates"
-    mkdir -p "$TARGET_DIR/.claude/templates/ci"
-    for tmpl in "$PRP_SOURCE/.claude/templates/ci/"*.template; do
-        [[ -f "$tmpl" ]] || continue
-        cp "$tmpl" "$TARGET_DIR/.claude/templates/ci/"
-    done
-    local_count=$(find "$TARGET_DIR/.claude/templates/ci" -name "*.template" | wc -l | tr -d ' ')
-    ok "Installed $local_count CI templates"
-    INSTALLED+=("CI templates ($local_count files)")
+    header "Installing templates (CI + QA)"
+    copy_dir "$PRP_SOURCE/.claude/templates" "$TARGET_DIR/.claude/templates"
+    local_count=$(find "$TARGET_DIR/.claude/templates" \( -name "*.template" -o -name "*.md" \) | wc -l | tr -d ' ')
+    ok "Installed $local_count template files"
+    INSTALLED+=("Templates ($local_count files)")
 fi
 
 # 7. Pre-commit config + helper scripts
 if [[ ${SELECTED[6]} -eq 1 ]]; then
     header "Installing pre-commit config"
+
+    PRP_PC_START="  # <!-- PRP-HOOKS-START -->"
+    PRP_PC_END="  # <!-- PRP-HOOKS-END -->"
+
+    # Extract repo entries from PRP's config (everything after the `repos:` line)
+    # Using awk instead of sed for macOS/BSD compatibility
+    PRP_REPOS=$(awk '/^repos:/{found=1; next} found{print}' "$PRP_SOURCE/.pre-commit-config.yaml")
+
     if [[ -f "$TARGET_DIR/.pre-commit-config.yaml" ]]; then
         backup_if_exists "$TARGET_DIR/.pre-commit-config.yaml"
-    fi
-    cp "$PRP_SOURCE/.pre-commit-config.yaml" "$TARGET_DIR/.pre-commit-config.yaml"
-    ok "Installed .pre-commit-config.yaml"
 
-    # Copy helper scripts (not observability scripts — those go with apps/)
+        if grep -q "PRP-HOOKS-START" "$TARGET_DIR/.pre-commit-config.yaml"; then
+            # Re-install: strip old PRP section between markers, then re-append
+            TMPFILE=$(mktemp)
+            awk '
+                /PRP-HOOKS-START/ { skip=1; next }
+                /PRP-HOOKS-END/   { skip=0; next }
+                !skip             { print }
+            ' "$TARGET_DIR/.pre-commit-config.yaml" > "$TMPFILE"
+            mv "$TMPFILE" "$TARGET_DIR/.pre-commit-config.yaml"
+        fi
+
+        # Append PRP repos at the end (valid YAML — extends the existing repos: list)
+        {
+            echo ""
+            echo "$PRP_PC_START"
+            echo "$PRP_REPOS"
+            echo "$PRP_PC_END"
+        } >> "$TARGET_DIR/.pre-commit-config.yaml"
+        ok "Appended PRP hooks to existing .pre-commit-config.yaml"
+    else
+        # No existing config — copy PRP's full file
+        cp "$PRP_SOURCE/.pre-commit-config.yaml" "$TARGET_DIR/.pre-commit-config.yaml"
+        ok "Installed .pre-commit-config.yaml"
+    fi
+
+    # Copy helper scripts via glob (skip observability + dev-only utilities)
     mkdir -p "$TARGET_DIR/scripts"
-    for helper in lint-frontend.sh check-file-size.sh trivy-precommit.sh \
-                  coverage-report.sh branch-viz.py; do
-        if [[ -f "$PRP_SOURCE/scripts/$helper" ]]; then
-            cp "$PRP_SOURCE/scripts/$helper" "$TARGET_DIR/scripts/$helper"
+    local_skip="start-observability.sh|stop-observability.sh|tmux-input-watcher.sh"
+    for helper in "$PRP_SOURCE/scripts/"*.{sh,py,html}; do
+        [[ -f "$helper" ]] || continue
+        helper_name=$(basename "$helper")
+        if [[ ! "$helper_name" =~ ^($local_skip)$ ]]; then
+            cp "$helper" "$TARGET_DIR/scripts/$helper_name"
         fi
     done
-    # Copy branch-viz template if present
-    [[ -f "$PRP_SOURCE/scripts/branch-viz-template.html" ]] && \
-        cp "$PRP_SOURCE/scripts/branch-viz-template.html" "$TARGET_DIR/scripts/branch-viz-template.html"
     ok "Installed pre-commit helper scripts"
     INSTALLED+=("Pre-commit config + helper scripts")
 fi
@@ -566,11 +597,31 @@ if [[ ${#WARNINGS[@]} -gt 0 ]]; then
     done
 fi
 
+PLUGIN_DIR="$PRP_SOURCE/prp-browser.nvim"
+PLUGIN_DIR_SHORT="${PLUGIN_DIR/#$HOME/\~}"
+
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo "  1. cd $TARGET_DIR"
 echo "  2. Edit .claude/prp-settings.json with your project details"
 echo "  3. Run: claude"
 echo "  4. Try: /prp-primer"
+
+if [[ -d "$PLUGIN_DIR" ]]; then
+    echo ""
+    echo -e "${BOLD}Neovim plugin:${NC}"
+    echo -e "  Add to ${DIM}~/.config/nvim/lua/plugins/prp-browser.lua${NC}:"
+    echo ""
+    echo "  return {"
+    echo "    dir = \"$PLUGIN_DIR_SHORT\","
+    echo '    dependencies = { "MunifTanjim/nui.nvim" },'
+    echo '    cmd = { "PRPBrowser" },'
+    echo '    keys = { { "<leader>pb", "<cmd>PRPBrowser<cr>", desc = "PRP Browser" } },'
+    echo "    config = function()"
+    echo '      require("prp-browser").setup({})'
+    echo "    end,"
+    echo "  }"
+fi
+
 echo ""
 echo -e "${DIM}To reinstall/update, run this script again (it's idempotent).${NC}"
